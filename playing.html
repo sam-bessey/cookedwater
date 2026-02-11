@@ -5,16 +5,46 @@
         <title>Cookedwater.com</title>
         <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
         <style>
-            .progressContainer{
+            .progressContainer {
                 width: 90vw;
                 height: 10vh;
                 border: 1px black solid;
-                padding-left: 5vw;
+                margin-left: 5vw;
+                margin-top: 5vw;
+                padding: 0;
+            }
+            .innerProgress {
+                transition: 150s ease;
+                width: 0;
+                background-image: linear-gradient(
+                    45deg,
+                    rgb(228, 128, 128),
+                    rgb(139, 131, 231)
+                );
+                height: 100%;
             }
         </style>
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                setTimeout(() => {
+                    document.getElementById("progress").style.width = "100vw";
+
+                    setTimeout(()=>{
+
+                        i = 0;
+                        while (true) {
+                            console.log(i);
+                            i++;
+                        }
+                    }, 1500)
+                }, 10);
+            });
+        </script>
     </head>
     <body>
         <h1 class="text-center text-3xl">Downloading...</h1>
-        <div class="progressContainer"></div>
+        <div class="progressContainer">
+            <div class="innerProgress" id="progress"></div>
+        </div>
     </body>
 </html>
