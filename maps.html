@@ -1,0 +1,416 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Google Maps | CookedWater</title>
+        <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+
+            body {
+                margin: 0;
+                font-family: "DM Sans", sans-serif;
+            }
+
+            #search-wrapper {
+                position: fixed;
+                top: 1rem;
+                right: 1rem;
+                width: 22rem;
+                z-index: 10;
+            }
+
+            #search-input {
+                width: 100%;
+                height: 2.75rem;
+                border-radius: 999px;
+                border: 1px solid rgba(255, 255, 255, 0.35);
+                background: rgba(255, 255, 255, 0.55);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                padding: 0 1.1rem 0 2.75rem;
+                font-size: 0.875rem;
+                font-family: "DM Sans", sans-serif;
+                color: #1a1a1a;
+                outline: none;
+                box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+                transition:
+                    background 0.2s,
+                    box-shadow 0.2s;
+            }
+
+            #search-input:focus {
+                background: rgba(255, 255, 255, 0.85);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+            }
+
+            #search-input::placeholder {
+                color: #666;
+            }
+
+            .search-icon {
+                position: absolute;
+                left: 0.85rem;
+                top: 50%;
+                transform: translateY(-50%);
+                pointer-events: none;
+                color: #444;
+                width: 1.1rem;
+                height: 1.1rem;
+            }
+
+            #suggestions {
+                margin-top: 0.4rem;
+                background: rgba(255, 255, 255, 0.92);
+                backdrop-filter: blur(16px);
+                -webkit-backdrop-filter: blur(16px);
+                border-radius: 1rem;
+                overflow: hidden;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+                border: 1px solid rgba(255, 255, 255, 0.5);
+                display: none;
+            }
+
+            .suggestion-item {
+                padding: 0.65rem 1rem;
+                cursor: pointer;
+                font-size: 0.82rem;
+                color: #1a1a1a;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+                transition: background 0.12s;
+                display: flex;
+                align-items: flex-start;
+                gap: 0.6rem;
+            }
+
+            .suggestion-item:last-child {
+                border-bottom: none;
+            }
+
+            .suggestion-item:hover,
+            .suggestion-item.active {
+                background: rgba(66, 133, 244, 0.1);
+            }
+
+            .suggestion-icon {
+                flex-shrink: 0;
+                margin-top: 0.1rem;
+                color: #4285f4;
+            }
+
+            .suggestion-name {
+                font-weight: 500;
+                color: #111;
+            }
+
+            .suggestion-detail {
+                color: #777;
+                font-size: 0.75rem;
+                margin-top: 0.1rem;
+            }
+
+            #loading-indicator {
+                position: absolute;
+                right: 0.85rem;
+                top: 50%;
+                transform: translateY(-50%);
+                display: none;
+            }
+
+            .spinner {
+                width: 1rem;
+                height: 1rem;
+                border: 2px solid rgba(66, 133, 244, 0.3);
+                border-top-color: #4285f4;
+                border-radius: 50%;
+                animation: spin 0.6s linear infinite;
+            }
+
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
+            iframe {
+                border: 0;
+            }
+        </style>
+    </head>
+    <body>
+        <iframe
+            id="loading-frame"
+            src="download.html"
+            style="
+                width: 100vw;
+                height: 100vh;
+                display: block;
+                border: 0;
+                position: fixed;
+                top: 0;
+                left: 0;
+                z-index: 20;
+                background-color: #ffffff;
+            "
+        ></iframe>
+
+        <iframe
+            id="map-frame"
+            src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d21491518.692858838!2d-90.0766712175499!3d42.72116135499109!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1774365060524!5m2!1sen!2sus"
+            style="width: 100vw; height: 100vh; display: block"
+            allowfullscreen=""
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+        ></iframe>
+
+        <div id="search-wrapper" style="display: none">
+            <div style="position: relative">
+                <svg
+                    class="search-icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="2.2"
+                >
+                    <circle cx="11" cy="11" r="7" />
+                    <line x1="16.5" y1="16.5" x2="22" y2="22" />
+                </svg>
+                <input
+                    id="search-input"
+                    type="text"
+                    placeholder="Search maps…"
+                    autocomplete="off"
+                    spellcheck="false"
+                />
+                <div id="loading-indicator"><div class="spinner"></div></div>
+            </div>
+            <div id="suggestions"></div>
+        </div>
+
+        <script>
+            // Restore loading screen — hide after 5s
+            setTimeout(() => {
+                document.getElementById("loading-frame").style.display = "none";
+                document.getElementById("search-wrapper").style.display =
+                    "block";
+            }, 5000);
+
+            const input = document.getElementById("search-input");
+            const suggestionsBox = document.getElementById("suggestions");
+            const loadingIndicator =
+                document.getElementById("loading-indicator");
+            const mapFrame = document.getElementById("map-frame");
+
+            let debounceTimer = null;
+            let activeIndex = -1;
+            let currentResults = [];
+
+            input.addEventListener("input", () => {
+                const query = input.value.trim();
+                clearTimeout(debounceTimer);
+                activeIndex = -1;
+
+                if (query.length < 2) {
+                    hideSuggestions();
+                    return;
+                }
+
+                debounceTimer = setTimeout(() => fetchSuggestions(query), 300);
+            });
+
+            input.addEventListener("keydown", (e) => {
+                const items =
+                    suggestionsBox.querySelectorAll(".suggestion-item");
+                if (!items.length) return;
+
+                if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    activeIndex = Math.min(activeIndex + 1, items.length - 1);
+                    updateActive(items);
+                } else if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    activeIndex = Math.max(activeIndex - 1, 0);
+                    updateActive(items);
+                } else if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (activeIndex >= 0 && currentResults[activeIndex]) {
+                        selectResult(currentResults[activeIndex]);
+                    } else if (currentResults.length > 0) {
+                        selectResult(currentResults[0]);
+                    }
+                } else if (e.key === "Escape") {
+                    hideSuggestions();
+                }
+            });
+
+            document.addEventListener("click", (e) => {
+                if (
+                    !document
+                        .getElementById("search-wrapper")
+                        .contains(e.target)
+                ) {
+                    hideSuggestions();
+                }
+            });
+
+            function updateActive(items) {
+                items.forEach((item, i) => {
+                    item.classList.toggle("active", i === activeIndex);
+                });
+            }
+
+            async function fetchSuggestions(query) {
+                loadingIndicator.style.display = "block";
+                try {
+                    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=6`;
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    currentResults = data;
+                    renderSuggestions(data);
+                } catch (err) {
+                    console.error("Nominatim error:", err);
+                    hideSuggestions();
+                } finally {
+                    loadingIndicator.style.display = "none";
+                }
+            }
+
+            function renderSuggestions(results) {
+                if (!results.length) {
+                    hideSuggestions();
+                    return;
+                }
+
+                suggestionsBox.innerHTML = "";
+                results.forEach((r, i) => {
+                    const item = document.createElement("div");
+                    item.className = "suggestion-item";
+
+                    const iconType = getIconType(r.type, r.class);
+                    const { primary, secondary } = formatDisplay(r);
+
+                    item.innerHTML = `
+                        <svg class="suggestion-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            ${iconType}
+                        </svg>
+                        <div>
+                            <div class="suggestion-name">${escapeHtml(primary)}</div>
+                            ${secondary ? `<div class="suggestion-detail">${escapeHtml(secondary)}</div>` : ""}
+                        </div>
+                    `;
+
+                    item.addEventListener("mousedown", (e) => {
+                        e.preventDefault();
+                        selectResult(r);
+                    });
+
+                    item.addEventListener("mouseover", () => {
+                        activeIndex = i;
+                        updateActive(
+                            suggestionsBox.querySelectorAll(".suggestion-item"),
+                        );
+                    });
+
+                    suggestionsBox.appendChild(item);
+                });
+
+                suggestionsBox.style.display = "block";
+            }
+
+            function formatDisplay(r) {
+                const addr = r.address || {};
+                const nameParts = r.display_name.split(", ");
+
+                // Primary: first meaningful token
+                const primary = r.name || nameParts[0];
+
+                // Secondary: city + country or abbreviated address
+                const city =
+                    addr.city || addr.town || addr.village || addr.county || "";
+                const country = addr.country || "";
+                const secondary =
+                    [city, country].filter(Boolean).join(", ") ||
+                    nameParts.slice(1, 3).join(", ");
+
+                return { primary, secondary };
+            }
+
+            function getIconType(type, cls) {
+                if (cls === "highway" || type === "road") {
+                    return '<path d="M3 17l9-14 9 14M8 13h8"/>';
+                }
+                if (cls === "natural" || type === "water") {
+                    return '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>';
+                }
+                // Default pin
+                return '<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5 14.5 7.62 14.5 9 13.38 11.5 12 11.5z"/>';
+            }
+
+            function selectResult(result) {
+                const { primary } = formatDisplay(result);
+                input.value = primary;
+                hideSuggestions();
+
+                const lat = parseFloat(result.lat);
+                const lon = parseFloat(result.lon);
+                navigateTo(lat, lon, result);
+            }
+
+            function navigateTo(lat, lon, result) {
+                const cls = result.class;
+                const type = result.type;
+
+                // !1d is the viewport width in meters
+                let meters;
+                if (type === "country") meters = 4000000;
+                else if (
+                    type === "state" ||
+                    type === "province" ||
+                    type === "region"
+                )
+                    meters = 400000;
+                else if (type === "county" || type === "administrative")
+                    meters = 80000;
+                else if (type === "city") meters = 30000;
+                else if (type === "town") meters = 12000;
+                else if (type === "village" || type === "hamlet") meters = 5000;
+                else if (
+                    type === "suburb" ||
+                    type === "neighbourhood" ||
+                    type === "quarter"
+                )
+                    meters = 3000;
+                else if (cls === "highway" || cls === "road") meters = 2000;
+                else if (cls === "place") meters = 15000;
+                else if (cls === "boundary") meters = 200000;
+                else meters = 1500; // building / POI
+
+                const embedUrl = `https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d${meters}!2d${lon}!3d${lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v${Date.now()}!5m2!1sen!2sus`;
+                mapFrame.src = embedUrl;
+            }
+
+            function hideSuggestions() {
+                suggestionsBox.style.display = "none";
+                suggestionsBox.innerHTML = "";
+                currentResults = [];
+                activeIndex = -1;
+            }
+
+            function escapeHtml(str) {
+                return str
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;");
+            }
+        </script>
+    </body>
+</html>

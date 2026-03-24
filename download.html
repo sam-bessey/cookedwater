@@ -1,0 +1,42 @@
+<!-- Use for fast downloading such as google maps -->
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Downloading | Cookedwater</title>
+        <style>
+            .progressContainer {
+                width: 90vw;
+                height: 10vh;
+                border: 1px black solid;
+                margin-left: 5vw;
+                margin-top: 5vw;
+                padding: 0;
+            }
+            .innerProgress {
+                transition: 5s ease;
+                width: 0;
+                background-image: linear-gradient(
+                    45deg,
+                    rgb(228, 128, 128),
+                    rgb(139, 131, 231)
+                );
+                height: 100%;
+            }
+        </style>
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                setTimeout(()=>{
+
+                    document.getElementById("progress").style.width = "100%"
+                }, 1)
+            })
+        </script>
+    </head>
+
+    <body>
+        <h1 class="text-center text-3xl">Downloading...</h1>
+        <div class="progressContainer border">
+            <div class="innerProgress" id="progress"></div>
+        </div>
+    </body>
+</html>
