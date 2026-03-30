@@ -12,9 +12,10 @@
                 }
                 const data = await response.json(); // Wait for the body to be parsed as JSON
                 console.log(data);
-                
+
                 // Add to the thing
-                document.getElementById("quote").innerText = `"${data.quote}" -- Kanye West`;
+                document.getElementById("quote").innerText =
+                    `"${data.quote}" -- Kanye West`;
             }
             document.addEventListener("DOMContentLoaded", () => {
                 getQuote();
@@ -100,33 +101,163 @@
             </a>
         </div>
 
-        <p id="quote" class="text-lg text-center bg-gray-900 dark:bg-gray-100 w-auto m-10 p-3 rounded-lg" onclick="getQuote()">Loading...</p>
+        <p
+            id="quote"
+            class="text-lg text-center bg-gray-900 dark:bg-gray-100 w-auto m-10 p-3 rounded-lg"
+            onclick="getQuote()"
+        >
+            Loading...
+        </p>
 
         <div class="p-3">
             <h2 class="text-xl p-3">FAQs</h2>
-            <details>
-                <summary>Why is it so slow?</summary>
-                Your computer probably isn't powerful enough to run it at a
-                higher speed. Try buying a 5090 or closing some tabs
+            <details class="ml-5">
+                <summary class="-translate-x-5">Why is it so slow?</summary>
+                <p class="mt-5">
+                    There are several things that could be causing performance
+                    issues, such as:
+                </p>
+                <p class="mt-5">
+                    - DEVICE: Cookedwater only supports computers, NOT phones or
+                    iPads. If you are on a phone or ipad, things might download,
+                    but most things will not actually open.
+                </p>
+                <p class="mt-5">
+                    - LOW POWER MODE: Make sure you turn off low power mode,
+                    cookedwater is known to have issues with this
+                </p>
+                <p class="mt-5">
+                    - RAM: Your computer might not have enough RAM. Many of
+                    these games are unreleased, and so we do not know the actual
+                    minimum RAM required to run it, but in general at least 64GB
+                    of
+                    <a
+                        href="https://en.wikipedia.org/wiki/DDR6_SDRAM"
+                        class="hover:underline"
+                        >DDR6</a
+                    >
+                    or higher will provide the best experience. If you don't
+                    have enough RAM, you can download more for free at
+                    <a
+                        href="https://downloadmoreram.com"
+                        class="hover:underline text-blue-300 dark:text-blue-700"
+                        >downloadmoreram.com</a
+                    >
+                </p>
+                <p class="mt-5">
+                    - OPERATING SYSTEM:
+                    <a
+                        href="sam-bessey.github.io/cookedwater"
+                        class="hover:underline"
+                        >Cookedwater</a
+                    >
+                    has the best performance on
+                    <a href="https://google.com" class="hover:underline"
+                        >Google</a
+                    >
+                    <a href="https://google.com/chrome" class="hover:underline"
+                        >Chrome</a
+                    >
+                    on the latest version of
+                    <a
+                        href="https://www.microsoft.com/en-us/windows/business/windows-11-pro"
+                        class="hover:underline"
+                        >WinDows 11 Pro.</a
+                    >
+                    <a
+                        href="https://www.microsoft.com/en-us/windows/windows-11?r=1&form=MA1412"
+                        class="hover:underline"
+                        >Windows 11 Home</a
+                    >
+                    and any version of
+                    <a
+                        href="https://www.microsoft.com/en-us/software-download/windows10ISO"
+                        class="hover:underline"
+                        >Windows 10</a
+                    >, as well as
+                    <a
+                        href="https://www.apple.com/os/macos/"
+                        class="hover:underline"
+                        >MacOS</a
+                    >
+                    <a
+                        href="https://support.apple.com/en-us/docs/mac/132617"
+                        class="hover:underline"
+                        >X Snow Leopard</a
+                    >
+                    or later are supported as well (Although the
+                    <a
+                        href="https://www.apple.com/safari/"
+                        class="hover:underline"
+                        >Safari</a
+                    >
+                    browser will probably not work).
+                    <a href="https://kernel.org" class="hover:underline"
+                        >Linux</a
+                    >
+                    might work, but will not have as good performance as
+                    <a
+                        href="https://www.microsoft.com/en-us/windows/windows-11?r=1&form=MA1412"
+                        class="hover:underline"
+                        >Windows.</a
+                    >
+                </p>
+                <p class="mt-5">
+                    - STORAGE: For the best experience, we reccommend at least
+                    <a
+                        href="https://en.wikipedia.org/wiki/2"
+                        class="hover:underline"
+                        >2</a
+                    >
+                    <a
+                        href="https://www.google.com/search?q=petabyte&rlz=1C5GCEM_enUS1178US1178&oq=petabyte&gs_lcrp=EgZjaHJvbWUyBggAEEUYOdIBCDEwNjdqMGo3qAIAsAIA&sourceid=chrome&ie=UTF-8&safe=active&ssui=on"
+                        class="hover:underline"
+                        >petabytes</a
+                    >
+                    and a
+                    <a
+                        href="https://pcisig.com/pci-express-6.0-specification"
+                        class="hover:underline"
+                        >Gen 6</a
+                    >
+                    SSD.
+                </p>
+                <p class="my-5">
+                    - GPU: Many of the things on Cookedwater are very
+                    graphics-intensive. Therefore, we reccommend for a GPU
+                    either an
+                    <a
+                        href="https://www.intel.com/content/www/us/en/support/products/96551/graphics/processor-graphics/intel-hd-graphics-family/intel-hd-graphics-620.html"
+                        class="hover:underline"
+                        >Intel HD 620</a
+                    >
+                    or a
+                    <a
+                        href="https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5090/"
+                        class="hover:underline"
+                        >5090</a
+                    >, although anything else with at least 64GB of VRAM will
+                    probably work.
+                </p>
             </details>
 
-            <details>
-                <summary>How can I contact you?</summary>
+            <details class="ml-5">
+                <summary class="-translate-x-5">How can I contact you?</summary>
                 You can email us at
                 <a href="mailto:hankreyh@gmail.com">hankreyh@gmail.com</a> or
                 text/call us at +1 (207)-894-8343
             </details>
 
-            <details>
-                <summary>
+            <details class="ml-5">
+                <summary class="-translate-x-5">
                     Why is it called Cookedwater.com but the link is
                     sam-bessey.github.io/cookedwater?
                 </summary>
                 If you own the cookedwater.com domain, we'd be happy to take it!
             </details>
 
-            <details>
-                <summary>Do you sell my data?</summary>
+            <details class="ml-5">
+                <summary class="-translate-x-5">Do you sell my data?</summary>
                 No we don't. In fact, we don't even collect any data! If you
                 don't believe us, just look at our
                 <a
@@ -136,8 +267,8 @@
                 >
             </details>
 
-            <details>
-                <summary>
+            <details class="ml-5">
+                <summary class="-translate-x-5">
                     You say it's open source, but where is the code?
                 </summary>
                 It's right
@@ -148,8 +279,8 @@
                 >
             </details>
 
-            <details>
-                <summary>
+            <details class="ml-5">
+                <summary class="-translate-x-5">
                     Where do you get the quotes from?
                 </summary>
                 From
@@ -161,8 +292,10 @@
                 of course!
             </details>
 
-            <details>
-                <summary>Can I become a sponsor?</summary>
+            <details class="ml-5">
+                <summary class="-translate-x-5">
+                    Can I become a sponsor?
+                </summary>
                 Sure! You can be a cookedwater sponsor and have your name on the
                 website for just $10/month!
             </details>
