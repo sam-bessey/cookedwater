@@ -1162,6 +1162,7 @@
             let cameraMode = 0,
                 crashed = false,
                 landed = false,
+                loading = false,
                 startTime = Date.now();
 
             const SPAWN_POS = new THREE.Vector3(0, 420, -800);
@@ -1183,6 +1184,16 @@
                 ACTIVE_MAP = map;
                 crashed = false;
                 landed = false;
+                loading = true;
+                // Reset plane state immediately so the physics loop (if still ticking) can't re-crash
+                S.pos.copy(SPAWN_POS);
+                S.vel.set(0, 0, 80);
+                S.pitch = 0;
+                S.roll = 0;
+                S.yaw = 0;
+                S.airspeed = 80;
+                S.throttle = 0.45;
+                S.prevY = SPAWN_POS.y;
                 document.getElementById("crash-screen").style.display = "none";
                 document.getElementById("landed-screen").style.display = "none";
                 document.getElementById("map-select").style.display = "none";
@@ -1298,6 +1309,7 @@
                         lastCZ = pcz;
                         crashed = false;
                         landed = false;
+                        loading = false;
                         S.pos.copy(SPAWN_POS);
                         S.vel.set(0, 0, 80);
                         S.pitch = 0;
@@ -1307,7 +1319,7 @@
                         S.throttle = 0.45;
                         S.prevY = SPAWN_POS.y;
                         startTime = Date.now();
-                        camLP.copy(camera.position);
+                        camLP.copy(SPAWN_POS);
                         loop();
                         return;
                     }
@@ -1721,10 +1733,11 @@
                 AZ = new THREE.Vector3(0, 0, 1);
             const camLP = new THREE.Vector3();
 
-            function buildQ() {
+            function buildQ(visualFlip) {
+                const r = visualFlip ? -S.roll : S.roll;
                 _qY.setFromAxisAngle(AY, S.yaw);
                 _qP.setFromAxisAngle(AX, S.pitch);
-                _qR.setFromAxisAngle(AZ, S.roll);
+                _qR.setFromAxisAngle(AZ, r);
                 return _qY.clone().multiply(_qP).multiply(_qR);
             }
 
@@ -1750,6 +1763,7 @@
             }
 
             function updatePhysics(dt) {
+                if (loading) return;
                 const PR = 0.9,
                     RR = 1.1,
                     YR = 0.35;
@@ -1769,15 +1783,13 @@
                     -Math.PI * 0.48,
                     Math.min(Math.PI * 0.48, S.pitch),
                 );
-                S.roll = Math.max(
-                    -Math.PI * 0.82,
-                    Math.min(Math.PI * 0.82, S.roll),
-                );
+                // No roll clamp — allow full 360° barrel rolls
 
                 S.airspeed += (S.throttle * 310 - S.airspeed) * dt * 0.55;
                 S.airspeed = Math.max(0, Math.min(387, S.airspeed));
                 const stalled = S.airspeed < STALL_SPEED;
 
+                // Physics quaternion (correct nose direction & turn coupling)
                 const q = buildQ();
                 const nose = new THREE.Vector3(0, 0, -1).applyQuaternion(q);
                 S.vel.lerp(
@@ -1816,7 +1828,8 @@
                 }
 
                 planeMesh.position.copy(S.pos);
-                planeMesh.quaternion.copy(q);
+                // Negate roll for the mesh so left arrow visually banks left
+                planeMesh.quaternion.copy(buildQ(true));
                 planeMesh.visible = cameraMode === 0;
                 document.getElementById("stall").style.display = stalled
                     ? "block"
@@ -1882,7 +1895,7 @@
                 ctx.arc(cx, cy, R, 0, Math.PI * 2);
                 ctx.clip();
                 ctx.translate(cx, cy);
-                ctx.rotate(-S.roll);
+                ctx.rotate(S.roll);
                 const pOff = S.pitch * R * 2.2;
                 const skyG = ctx.createLinearGradient(0, -R, 0, pOff);
                 skyG.addColorStop(0, "#0a1a3a");
@@ -1943,7 +1956,7 @@
                     -60, -45, -30, -20, -10, 0, 10, 20, 30, 45, 60,
                 ]) {
                     ctx.save();
-                    ctx.rotate((deg * Math.PI) / 180 - S.roll);
+                    ctx.rotate((deg * Math.PI) / 180 + S.roll);
                     const len = deg % 30 === 0 ? 10 : deg % 10 === 0 ? 6 : 4;
                     ctx.strokeStyle = `rgba(57,255,160,${deg === 0 ? 0.9 : 0.4})`;
                     ctx.lineWidth = deg === 0 ? 2 : 1;
@@ -2142,11 +2155,11 @@
             let lastT = 0,
                 loopRunning = false;
             function loop(ts = 0) {
-                if (!ACTIVE_MAP) return; // stop when back at map select
+                if (!ACTIVE_MAP) return;
                 requestAnimationFrame(loop);
                 const dt = Math.min((ts - lastT) / 1000, 0.05);
                 lastT = ts;
-                if (!crashed && !landed) updatePhysics(dt);
+                if (!crashed && !landed && !loading) updatePhysics(dt);
                 updateCamera();
                 updateHUD();
                 if (renderer && scene && camera) renderer.render(scene, camera);
