@@ -1,0 +1,2940 @@
+<!doctype html>
+
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>🍔 MEGA BURGER MUNCH</title>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Boogaloo&family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            :root {
+                --bun: #c8762a;
+                --patty: #5a2d0c;
+                --cheese: #f5c518;
+                --lettuce: #4caf50;
+                --tomato: #e53935;
+                --onion: #ce93d8;
+                --pickle: #7cb342;
+                --sesame: #f0d080;
+                --bg: #0d0600;
+                --text: #fff8ee;
+                --accent: #ff9800;
+                --gold: #ffd700;
+                --card: #1e1000;
+                --border: #3d2000;
+            }
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            html {
+                overflow: hidden;
+            }
+            body {
+                background: radial-gradient(
+                    ellipse at 30% 40%,
+                    #2a1200,
+                    var(--bg) 70%
+                );
+                min-height: 100vh;
+                font-family: "Nunito", sans-serif;
+                color: var(--text);
+                overflow: hidden;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+                cursor: none;
+                user-select: none;
+            }
+
+            /* ── CURSOR ── */
+            .cursor {
+                position: fixed;
+                pointer-events: none;
+                z-index: 9999;
+                transform: translate(-50%, -60%);
+                font-size: 32px;
+                transition: font-size 0.1s;
+                filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
+            }
+            .cursor.shop-mode {
+                font-size: 22px;
+                transform: translate(-50%, -50%);
+            }
+
+            /* Mouth animation frames via pseudo */
+            .mouth-wrap {
+                position: fixed;
+                pointer-events: none;
+                z-index: 9999;
+                transform: translate(-50%, -55%);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0;
+            }
+            .mouth-top {
+                font-size: 28px;
+                line-height: 1;
+                transition: transform 0.08s;
+            }
+            .mouth-bot {
+                font-size: 22px;
+                line-height: 1;
+                transition: transform 0.08s;
+                margin-top: -8px;
+            }
+            .mouth-wrap.open .mouth-top {
+                transform: translateY(-6px) rotate(-10deg);
+            }
+            .mouth-wrap.open .mouth-bot {
+                transform: translateY(6px);
+            }
+            .mouth-wrap.chomp .mouth-top {
+                transform: translateY(-12px) rotate(-20deg) scale(1.2);
+            }
+            .mouth-wrap.chomp .mouth-bot {
+                transform: translateY(10px) scale(1.15);
+            }
+
+            /* ── HUD ── */
+            .hud {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 10px 18px;
+                background: linear-gradient(
+                    to bottom,
+                    rgba(0, 0, 0, 0.9) 60%,
+                    transparent
+                );
+                z-index: 300;
+                gap: 10px;
+            }
+            .hud-title {
+                font-family: ‘Boogaloo’, cursive;
+                font-size: 1.8rem;
+                color: var(–accent);
+                text-shadow:
+                    0 0 18px #ff980066,
+                    2px 2px 0 #3a1500;
+                white-space: nowrap;
+            }
+            .hud-center {
+                display: flex;
+                gap: 8px;
+                flex: 1;
+                justify-content: center;
+                flex-wrap: wrap;
+                align-items: center;
+            }
+            .stat-box {
+                background: rgba(255, 152, 0, 0.1);
+                border: 2px solid rgba(255, 152, 0, 0.3);
+                border-radius: 10px;
+                padding: 3px 12px;
+                text-align: center;
+                min-width: 68px;
+            }
+            .stat-label {
+                font-size: 0.5rem;
+                letter-spacing: 2px;
+                text-transform: uppercase;
+                opacity: 0.6;
+            }
+            .stat-value {
+                font-family: ‘Boogaloo’, cursive;
+                font-size: 1.4rem;
+                color: var(–accent);
+            }
+            .money-hud {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                background: linear-gradient(
+                    135deg,
+                    rgba(255, 215, 0, 0.18),
+                    rgba(255, 152, 0, 0.08)
+                );
+                border: 2px solid rgba(255, 215, 0, 0.45);
+                border-radius: 14px;
+                padding: 5px 14px;
+            }
+            .money-val {
+                font-family: ‘Boogaloo’, cursive;
+                font-size: 1.7rem;
+                color: var(–gold);
+                text-shadow: 0 0 12px rgba(255, 215, 0, 0.5);
+                min-width: 55px;
+            }
+            .money-val.bump {
+                animation: bump 0.3s ease-out;
+            }
+            @keyframes bump {
+                0% {
+                    transform: scale(1);
+                }
+                50% {
+                    transform: scale(1.4);
+                }
+                100% {
+                    transform: scale(1);
+                }
+            }
+
+            .shop-btn {
+                background: linear-gradient(135deg, #ff6f00, #ff9800, #ffca28);
+                border: none;
+                color: #1a0800;
+                font-family: ‘Boogaloo’, cursive;
+                font-size: 1rem;
+                letter-spacing: 1px;
+                padding: 8px 16px;
+                border-radius: 40px;
+                cursor: none;
+                box-shadow:
+                    0 3px 0 #bf360c,
+                    0 5px 16px rgba(255, 152, 0, 0.4);
+                transition: all 0.14s;
+                white-space: nowrap;
+                position: relative;
+            }
+            .shop-btn:hover {
+                transform: translateY(-2px);
+                box-shadow:
+                    0 5px 0 #bf360c,
+                    0 8px 22px rgba(255, 152, 0, 0.5);
+            }
+            .shop-btn:active {
+                transform: translateY(1px);
+                box-shadow: 0 1px 0 #bf360c;
+            }
+            .notif {
+                display: inline-block;
+                background: #f44336;
+                color: #fff;
+                border-radius: 50%;
+                width: 17px;
+                height: 17px;
+                font-size: 0.6rem;
+                line-height: 17px;
+                text-align: center;
+                margin-left: 3px;
+                vertical-align: middle;
+                animation: pnotif 1s ease-in-out infinite;
+            }
+            @keyframes pnotif {
+                0%,
+                100% {
+                    transform: scale(1);
+                }
+                50% {
+                    transform: scale(1.35);
+                }
+            }
+
+            /* ── SHOP ── */
+            .shop-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.65);
+                z-index: 900;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.3s;
+            }
+            .shop-overlay.open {
+                opacity: 1;
+                pointer-events: all;
+            }
+            .shop-panel {
+                position: fixed;
+                top: 0;
+                right: -480px;
+                width: 460px;
+                height: 100vh;
+                background: linear-gradient(180deg, #1a0c00, #0d0500);
+                border-left: 2px solid rgba(255, 152, 0, 0.28);
+                z-index: 1000;
+                overflow-y: auto;
+                transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .shop-panel.open {
+                right: 0;
+            }
+            .shop-header {
+                padding: 18px 22px 12px;
+                border-bottom: 1px solid rgba(255, 152, 0, 0.2);
+                background: linear-gradient(
+                    180deg,
+                    rgba(255, 152, 0, 0.12),
+                    transparent
+                );
+                position: sticky;
+                top: 0;
+                z-index: 10;
+                backdrop-filter: blur(5px);
+            }
+            .shop-header-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .shop-title {
+                font-family: ‘Boogaloo’, cursive;
+                font-size: 1.9rem;
+                color: var(–accent);
+            }
+            .shop-close {
+                background: rgba(255, 80, 0, 0.2);
+                border: 1px solid rgba(255, 80, 0, 0.4);
+                color: #ff6040;
+                font-size: 1.3rem;
+                width: 34px;
+                height: 34px;
+                border-radius: 50%;
+                cursor: none;
+                transition: all 0.2s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .shop-close:hover {
+                background: rgba(255, 80, 0, 0.35);
+                transform: rotate(90deg);
+            }
+            .shop-bal {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                margin-top: 8px;
+                font-family: ‘Boogaloo’, cursive;
+                font-size: 1.2rem;
+                color: var(–gold);
+            }
+            .shop-bal small {
+                opacity: 0.55;
+                font-family: ‘Nunito’;
+                font-size: 0.75rem;
+            }
+
+            /* category tabs */
+            .tab-row {
+                display: flex;
+                gap: 4px;
+                padding: 10px 20px 0;
+                border-bottom: 1px solid rgba(255, 152, 0, 0.15);
+            }
+            .tab {
+                padding: 6px 14px;
+                border-radius: 8px 8px 0 0;
+                font-family: ‘Boogaloo’, cursive;
+                font-size: 0.9rem;
+                cursor: none;
+                background: transparent;
+                border: none;
+                color: rgba(255, 248, 238, 0.4);
+                transition: all 0.18s;
+            }
+            .tab.active {
+                background: rgba(255, 152, 0, 0.18);
+                color: var(–accent);
+            }
+            .tab:hover:not(.active) {
+                color: rgba(255, 248, 238, 0.7);
+            }
+
+            .upg-section {
+                padding: 14px 18px;
+                display: none;
+            }
+            .upg-section.active {
+                display: block;
+            }
+            .sec-label {
+                font-size: 0.6rem;
+                letter-spacing: 3px;
+                text-transform: uppercase;
+                color: rgba(255, 152, 0, 0.45);
+                margin-bottom: 10px;
+            }
+
+            .upg-card {
+                background: var(–card);
+                border: 2px solid var(–border);
+                border-radius: 14px;
+                padding: 12px 14px;
+                margin-bottom: 8px;
+                transition: all 0.18s;
+                position: relative;
+                overflow: hidden;
+            }
+            .upg-card::before {
+                content: ’’;
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(
+                    135deg,
+                    rgba(255, 152, 0, 0.04),
+                    transparent
+                );
+                pointer-events: none;
+            }
+            .upg-card.affordable {
+                border-color: rgba(255, 152, 0, 0.5);
+            }
+            .upg-card.affordable:hover {
+                border-color: rgba(255, 200, 0, 0.8);
+                transform: translateX(-3px);
+                box-shadow: 4px 0 16px rgba(255, 152, 0, 0.2);
+            }
+            .upg-card.maxed {
+                border-color: rgba(255, 215, 0, 0.38);
+                opacity: 0.72;
+            }
+            .upg-card.locked {
+                opacity: 0.35;
+            }
+            .upg-card.cant-afford {
+                opacity: 0.5;
+            }
+            .card-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            .card-left {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .card-icon {
+                font-size: 1.75rem;
+                flex-shrink: 0;
+            }
+            .card-name {
+                font-family:
+                    ‘Fredoka One’,
+                    cursive;
+                font-size: 0.95rem;
+                color: var(–text);
+            }
+            .card-desc {
+                font-size: 0.68rem;
+                color: rgba(255, 248, 238, 0.5);
+                margin-top: 2px;
+                line-height: 1.35;
+            }
+            .buy-btn {
+                border: none;
+                border-radius: 28px;
+                padding: 6px 14px;
+                cursor: none;
+                font-family: ‘Boogaloo’, cursive;
+                font-size: 0.9rem;
+                white-space: nowrap;
+                transition: all 0.14s;
+                flex-shrink: 0;
+            }
+            .buy-btn.ok {
+                background: linear-gradient(135deg, #ff8f00, #ffca28);
+                color: #1a0800;
+                box-shadow: 0 3px 0 #e65100;
+            }
+            .buy-btn.ok:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 5px 0 #e65100;
+            }
+            .buy-btn.ok:active {
+                transform: translateY(1px);
+                box-shadow: 0 1px 0 #e65100;
+            }
+            .buy-btn.no {
+                background: rgba(255, 255, 255, 0.07);
+                color: rgba(255, 248, 238, 0.3);
+                pointer-events: none;
+            }
+            .buy-btn.done {
+                background: linear-gradient(135deg, #ffd700, #ff9800);
+                color: #1a0800;
+                pointer-events: none;
+                font-size: 0.75rem;
+            }
+            .buy-btn.lock {
+                background: rgba(255, 255, 255, 0.05);
+                color: rgba(255, 248, 238, 0.2);
+                pointer-events: none;
+            }
+            .pips {
+                display: flex;
+                gap: 3px;
+                margin-top: 8px;
+            }
+            .pip {
+                height: 5px;
+                border-radius: 3px;
+                flex: 1;
+                background: rgba(255, 255, 255, 0.1);
+                transition: background 0.25s;
+            }
+            .pip.on {
+                background: linear-gradient(90deg, #ff8f00, #ffca28);
+            }
+            .pip.on.gold {
+                background: linear-gradient(90deg, #ffd700, #fff176);
+            }
+            .cur-stat {
+                display: inline-block;
+                background: rgba(255, 152, 0, 0.13);
+                border: 1px solid rgba(255, 152, 0, 0.28);
+                border-radius: 20px;
+                padding: 2px 9px;
+                font-size: 0.66rem;
+                color: rgba(255, 200, 100, 0.75);
+                margin-top: 5px;
+            }
+            .nxt-stat {
+                color: rgba(100, 255, 120, 0.7);
+                margin-left: 4px;
+            }
+            .shop-panel::-webkit-scrollbar {
+                width: 3px;
+            }
+            .shop-panel::-webkit-scrollbar-thumb {
+                background: rgba(255, 152, 0, 0.28);
+                border-radius: 2px;
+            }
+
+            /* ── SCENE ── */
+            .scene {
+                position: relative;
+                width: 100vw;
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: flex-end;
+                padding-bottom: 90px;
+            }
+
+            /* Screen shake */
+            @keyframes shake {
+                0% {
+                    transform: translate(0, 0) rotate(0);
+                }
+                15% {
+                    transform: translate(-5px, -3px) rotate(-0.5deg);
+                }
+                30% {
+                    transform: translate(5px, 2px) rotate(0.4deg);
+                }
+                45% {
+                    transform: translate(-4px, 4px) rotate(-0.3deg);
+                }
+                60% {
+                    transform: translate(4px, -2px) rotate(0.3deg);
+                }
+                75% {
+                    transform: translate(-2px, 3px) rotate(-0.2deg);
+                }
+                100% {
+                    transform: translate(0, 0) rotate(0);
+                }
+            }
+            .scene.shaking {
+                animation: shake 0.28s ease-out;
+            }
+
+            /* Burger */
+            .burger-wrap {
+                position: absolute;
+                bottom: 182px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 150;
+                cursor: none;
+                filter: drop-shadow(0 24px 50px rgba(0, 0, 0, 0.85));
+                transition: transform 0.12s;
+            }
+            .burger {
+                position: relative;
+                width: 320px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+            }
+            /* Burger bounce on hover */
+            .burger-wrap:hover .burger {
+                transform: scale(1.02) translateY(-4px);
+            }
+            .burger-wrap:active .burger {
+                transform: scale(0.95) rotate(-1.5deg);
+            }
+
+            /* Layers */
+            .layer {
+                width: 100%;
+                position: relative;
+                transition:
+                    transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+                    opacity 0.35s;
+                transform-origin: center bottom;
+            }
+
+            /* EATEN — fly off to side with spin */
+            .layer.eaten-left {
+                animation: flyLeft 0.32s cubic-bezier(0.4, 0, 0.6, 1) forwards;
+            }
+            .layer.eaten-right {
+                animation: flyRight 0.32s cubic-bezier(0.4, 0, 0.6, 1) forwards;
+            }
+            @keyframes flyLeft {
+                0% {
+                    transform: scale(1) translate(0, 0) rotate(0);
+                    opacity: 1;
+                }
+                100% {
+                    transform: scale(0.15) translate(-260px, -180px)
+                        rotate(-35deg);
+                    opacity: 0;
+                }
+            }
+            @keyframes flyRight {
+                0% {
+                    transform: scale(1) translate(0, 0) rotate(0);
+                    opacity: 1;
+                }
+                100% {
+                    transform: scale(0.15) translate(260px, -200px)
+                        rotate(30deg);
+                    opacity: 0;
+                }
+            }
+
+            /* Chomp squash & stretch */
+            .layer.chomping {
+                animation: chomp 0.22s ease-out;
+            }
+            @keyframes chomp {
+                0% {
+                    transform: scaleX(1) scaleY(1);
+                }
+                25% {
+                    transform: scaleX(1.12) scaleY(0.88);
+                }
+                55% {
+                    transform: scaleX(0.93) scaleY(1.06);
+                }
+                100% {
+                    transform: scaleX(1) scaleY(1);
+                }
+            }
+            .layer.multi-chomp {
+                animation: multich 0.24s ease-out;
+            }
+            @keyframes multich {
+                0% {
+                    transform: scaleX(1) scaleY(1);
+                }
+                20% {
+                    transform: scaleX(1.18) scaleY(0.82);
+                }
+                50% {
+                    transform: scaleX(0.88) scaleY(1.1);
+                }
+                100% {
+                    transform: scaleX(1) scaleY(1);
+                }
+            }
+
+            /* Bite marks that appear then fade */
+            .bite-mark {
+                position: absolute;
+                pointer-events: none;
+                z-index: 10;
+                font-size: 22px;
+                opacity: 0;
+                animation: bite-mark-anim 0.5s ease-out forwards;
+            }
+            @keyframes bite-mark-anim {
+                0% {
+                    opacity: 1;
+                    transform: scale(1.4);
+                }
+                100% {
+                    opacity: 0;
+                    transform: scale(0.6) translateY(-14px);
+                }
+            }
+
+            /* Burger layers CSS */
+            .bun-top {
+                width: 310px;
+                height: 100px;
+                background: radial-gradient(
+                    ellipse at 40% 30%,
+                    #e8a045 0%,
+                    var(–bun) 60%,
+                    #a05c1a 100%
+                );
+                border-radius: 50% 50% 30% 30%/60% 60% 30% 30%;
+                box-shadow:
+                    inset 0 -8px 16px rgba(0, 0, 0, 0.25),
+                    inset 0 8px 20px rgba(255, 220, 100, 0.3),
+                    0 4px 0 #8b4a10;
+                position: relative;
+                margin-bottom: -2px;
+            }
+            .bun-top::after {
+                content: ’’;
+                position: absolute;
+                top: 12px;
+                left: 30px;
+                right: 30px;
+                height: 35px;
+                background: radial-gradient(
+                    ellipse,
+                    rgba(255, 230, 150, 0.5),
+                    transparent 70%
+                );
+                border-radius: 50%;
+            }
+            .sesame {
+                position: absolute;
+                background: var(–sesame);
+                border-radius: 50% 50% 40% 40%;
+                box-shadow:
+                    inset 0 1px 3px rgba(255, 255, 255, 0.4),
+                    inset 0 -1px 2px rgba(0, 0, 0, 0.3);
+                transform: rotate(var(–r));
+            }
+            .lettuce-wrap {
+                width: 340px;
+                height: 28px;
+                position: relative;
+                margin-bottom: -4px;
+                z-index: 5;
+            }
+            .lettuce-wrap svg {
+                width: 100%;
+                height: 100%;
+            }
+            .tomato-layer {
+                width: 310px;
+                height: 18px;
+                background: linear-gradient(
+                    to bottom,
+                    #ef5350,
+                    var(–tomato) 60%,
+                    #b71c1c
+                );
+                border-radius: 4px;
+                margin-bottom: -2px;
+                overflow: hidden;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+                position: relative;
+            }
+            .tomato-layer::after {
+                content: ’’;
+                position: absolute;
+                inset: 0;
+                background: repeating-linear-gradient(
+                    90deg,
+                    transparent 0,
+                    transparent 28px,
+                    rgba(0, 0, 0, 0.15) 28px,
+                    rgba(0, 0, 0, 0.15) 30px
+                );
+            }
+            .cheese-wrap {
+                width: 330px;
+                height: 14px;
+                background: linear-gradient(
+                    to bottom,
+                    #fdd835,
+                    var(–cheese),
+                    #f9a825
+                );
+                margin-bottom: -2px;
+                position: relative;
+                box-shadow: 0 3px 8px rgba(200, 150, 0, 0.4);
+            }
+            .cheese-wrap::before {
+                content: ’’;
+                position: absolute;
+                bottom: -8px;
+                left: -10px;
+                width: 350px;
+                height: 12px;
+                background: var(–cheese);
+                clip-path: polygon(
+                    0 0,
+                    100% 0,
+                    97% 100%,
+                    94% 40%,
+                    90% 100%,
+                    85% 30%,
+                    80% 100%,
+                    75% 40%,
+                    70% 100%,
+                    65% 30%,
+                    60% 100%,
+                    55% 40%,
+                    50% 100%,
+                    45% 30%,
+                    40% 100%,
+                    35% 40%,
+                    30% 100%,
+                    25% 30%,
+                    20% 100%,
+                    15% 40%,
+                    10% 100%,
+                    5% 30%,
+                    3% 100%
+                );
+                z-index: 2;
+                opacity: 0.9;
+            }
+            .patty-wrap {
+                width: 300px;
+                height: 38px;
+                background: radial-gradient(
+                    ellipse at 40% 35%,
+                    #7a3f1a 0%,
+                    var(–patty) 60%,
+                    #3b1a05 100%
+                );
+                border-radius: 8px;
+                margin-bottom: -2px;
+                overflow: hidden;
+                position: relative;
+                box-shadow:
+                    inset 0 4px 10px rgba(255, 180, 100, 0.1),
+                    inset 0 -4px 10px rgba(0, 0, 0, 0.5),
+                    0 3px 0 #2a1005;
+            }
+            .patty-wrap::before {
+                content: ’’;
+                position: absolute;
+                inset: 6px;
+                background: repeating-linear-gradient(
+                    30deg,
+                    transparent 0,
+                    transparent 6px,
+                    rgba(0, 0, 0, 0.2) 6px,
+                    rgba(0, 0, 0, 0.2) 8px
+                );
+                border-radius: 6px;
+            }
+            .patty-wrap::after {
+                content: ’’;
+                position: absolute;
+                top: 6px;
+                left: 10%;
+                right: 10%;
+                height: 4px;
+                background: rgba(255, 150, 50, 0.3);
+                border-radius: 2px;
+                box-shadow:
+                    0 8px 0 rgba(255, 150, 50, 0.2),
+                    0 16px 0 rgba(255, 150, 50, 0.15);
+            }
+            .onion-layer {
+                width: 305px;
+                height: 14px;
+                margin-bottom: -2px;
+                display: flex;
+                gap: 3px;
+                align-items: center;
+                justify-content: center;
+            }
+            .onion-ring {
+                height: 14px;
+                border-radius: 6px;
+                background: linear-gradient(
+                    to bottom,
+                    #e1bee7,
+                    var(–onion),
+                    #9c27b0
+                );
+                opacity: 0.85;
+                box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3);
+            }
+            .pickle-layer {
+                width: 310px;
+                height: 12px;
+                margin-bottom: -2px;
+                display: flex;
+                gap: 6px;
+                align-items: center;
+                justify-content: center;
+            }
+            .pickle-slice {
+                height: 12px;
+                border-radius: 5px;
+                position: relative;
+                overflow: hidden;
+                background: linear-gradient(
+                    to bottom,
+                    #9ccc65,
+                    var(–pickle),
+                    #558b2f
+                );
+                box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.3);
+            }
+            .pickle-slice::after {
+                content: ’’;
+                position: absolute;
+                inset: 3px 2px;
+                background: repeating-linear-gradient(
+                    90deg,
+                    transparent 0,
+                    transparent 3px,
+                    rgba(255, 255, 255, 0.2) 3px,
+                    rgba(255, 255, 255, 0.2) 4px
+                );
+            }
+            .bun-bot {
+                width: 310px;
+                height: 45px;
+                background: radial-gradient(
+                    ellipse at 40% 20%,
+                    #e8a045,
+                    #c8762a 60%,
+                    #8b4a10 100%
+                );
+                border-radius: 8px 8px 30px 30px/8px 8px 20px 20px;
+                position: relative;
+                box-shadow:
+                    inset 0 4px 10px rgba(255, 220, 100, 0.2),
+                    0 6px 0 #6b3510,
+                    0 10px 20px rgba(0, 0, 0, 0.4);
+            }
+            .bun-bot::after {
+                content: ’’;
+                position: absolute;
+                top: 6px;
+                left: 20px;
+                right: 20px;
+                height: 12px;
+                background: radial-gradient(
+                    ellipse,
+                    rgba(255, 220, 120, 0.4),
+                    transparent 70%
+                );
+                border-radius: 50%;
+            }
+            .sauce-drip {
+                position: absolute;
+                width: 8px;
+                background: linear-gradient(to bottom, #e53935, #b71c1c);
+                border-radius: 0 0 4px 4px;
+                bottom: -12px;
+                animation: drip 2s ease-in infinite;
+                opacity: 0.8;
+            }
+            @keyframes drip {
+                0%,
+                70% {
+                    height: 0;
+                }
+                85% {
+                    height: 16px;
+                    opacity: 0.8;
+                }
+                100% {
+                    height: 16px;
+                    opacity: 0;
+                    transform: translateY(8px);
+                }
+            }
+
+            /* ── HANDS ── */
+            .hands {
+                position: fixed;
+                bottom: -20px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 520px;
+                height: 230px;
+                z-index: 200;
+                pointer-events: none;
+                transition:
+                    transform 0.14s,
+                    filter 0.14s;
+            }
+            /* Squeeze animation */
+            .hands.eating {
+                transform: translateX(-50%) translateY(-32px) rotate(-2deg)
+                    scale(1.04);
+                filter: drop-shadow(0 0 12px rgba(255, 152, 0, 0.4));
+                animation: handBounce 0.25s ease-out;
+            }
+            @keyframes handBounce {
+                0% {
+                    transform: translateX(-50%) translateY(0) rotate(0) scale(1);
+                }
+                40% {
+                    transform: translateX(-50%) translateY(-38px) rotate(-3deg)
+                        scale(1.07);
+                }
+                70% {
+                    transform: translateX(-50%) translateY(-28px)
+                        rotate(-1.5deg) scale(1.03);
+                }
+                100% {
+                    transform: translateX(-50%) translateY(-32px) rotate(-2deg)
+                        scale(1.04);
+                }
+            }
+            .hand {
+                position: absolute;
+                bottom: 0;
+                width: 210px;
+                height: 190px;
+            }
+            .hand-left {
+                left: 15px;
+            }
+            .hand-right {
+                right: 15px;
+                transform: scaleX(-1);
+            }
+            .hand svg {
+                width: 100%;
+                height: 100%;
+            }
+
+            /* ── PROGRESS ── */
+            .progress-wrap {
+                position: fixed;
+                bottom: 18px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 370px;
+                z-index: 300;
+                text-align: center;
+            }
+            .progress-label {
+                font-family: ‘Boogaloo’, cursive;
+                font-size: 0.85rem;
+                color: var(–accent);
+                letter-spacing: 2px;
+                margin-bottom: 5px;
+            }
+            .pbar-bg {
+                width: 100%;
+                height: 22px;
+                background: rgba(255, 255, 255, 0.08);
+                border-radius: 11px;
+                border: 2px solid rgba(255, 152, 0, 0.22);
+                overflow: hidden;
+                position: relative;
+            }
+            .pbar-fill {
+                height: 100%;
+                background: linear-gradient(90deg, #ff6f00, #ffca28, #ff6f00);
+                background-size: 200%;
+                border-radius: 9px;
+                transition: width 0.3s ease;
+                animation: shim 1.4s linear infinite;
+            }
+            @keyframes shim {
+                0% {
+                    background-position: 200% 0;
+                }
+                100% {
+                    background-position: 0 0;
+                }
+            }
+            /* Segments on bar */
+            .pbar-seg {
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                width: 2px;
+                background: rgba(0, 0, 0, 0.3);
+                z-index: 2;
+            }
+
+            /* ── NEW BURGER BTN ── */
+            .new-btn {
+                position: fixed;
+                bottom: 58px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: linear-gradient(135deg, #ff6f00, #ff9800, #ffca28);
+                border: none;
+                color: #1a0800;
+                font-family: ‘Boogaloo’, cursive;
+                font-size: 1.35rem;
+                letter-spacing: 2px;
+                padding: 11px 34px;
+                border-radius: 50px;
+                cursor: none;
+                box-shadow:
+                    0 4px 0 #bf360c,
+                    0 8px 22px rgba(255, 152, 0, 0.5);
+                transition: all 0.14s;
+                z-index: 300;
+                display: none;
+            }
+            .new-btn:hover {
+                transform: translateX(-50%) translateY(-3px);
+                box-shadow:
+                    0 7px 0 #bf360c,
+                    0 12px 28px rgba(255, 152, 0, 0.6);
+            }
+            .new-btn:active {
+                transform: translateX(-50%) translateY(1px);
+                box-shadow: 0 1px 0 #bf360c;
+            }
+            .new-btn.vis {
+                display: block;
+                animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            }
+            @keyframes popIn {
+                0% {
+                    transform: translateX(-50%) scale(0) rotate(-8deg);
+                    opacity: 0;
+                }
+                100% {
+                    transform: translateX(-50%) scale(1);
+                    opacity: 1;
+                }
+            }
+
+            /* ── EFFECTS ── */
+            .bite-flash {
+                position: fixed;
+                inset: 0;
+                pointer-events: none;
+                z-index: 400;
+                opacity: 0;
+                transition: opacity 0.07s;
+            }
+            .bite-flash.show {
+                opacity: 1;
+            }
+
+            /* Colored flash per layer */
+            .flash-bun {
+                background: radial-gradient(
+                    ellipse at center,
+                    rgba(200, 120, 40, 0.3),
+                    transparent 65%
+                );
+            }
+            .flash-lettuce {
+                background: radial-gradient(
+                    ellipse at center,
+                    rgba(76, 175, 80, 0.3),
+                    transparent 65%
+                );
+            }
+            .flash-tomato {
+                background: radial-gradient(
+                    ellipse at center,
+                    rgba(229, 57, 53, 0.3),
+                    transparent 65%
+                );
+            }
+            .flash-cheese {
+                background: radial-gradient(
+                    ellipse at center,
+                    rgba(245, 197, 24, 0.35),
+                    transparent 65%
+                );
+            }
+            .flash-patty {
+                background: radial-gradient(
+                    ellipse at center,
+                    rgba(100, 50, 20, 0.4),
+                    transparent 65%
+                );
+            }
+            .flash-onion {
+                background: radial-gradient(
+                    ellipse at center,
+                    rgba(206, 147, 216, 0.3),
+                    transparent 65%
+                );
+            }
+            .flash-pickle {
+                background: radial-gradient(
+                    ellipse at center,
+                    rgba(124, 179, 66, 0.3),
+                    transparent 65%
+                );
+            }
+
+            .particle {
+                position: fixed;
+                pointer-events: none;
+                z-index: 500;
+                animation: pflyout 0.85s ease-out forwards;
+            }
+            @keyframes pflyout {
+                0% {
+                    transform: translate(0, 0) scale(1.1) rotate(0);
+                    opacity: 1;
+                }
+                100% {
+                    transform: translate(var(–tx), var(–ty)) scale(0)
+                        rotate(var(–tr));
+                    opacity: 0;
+                }
+            }
+
+            .chomp-txt {
+                position: fixed;
+                pointer-events: none;
+                z-index: 500;
+                font-family: ‘Boogaloo’, cursive;
+                color: #ffca28;
+                text-shadow:
+                    2px 2px 0 #e65100,
+                    0 0 16px rgba(255, 200, 0, 0.9);
+                animation: chompTxt 0.65s ease-out forwards;
+                white-space: nowrap;
+            }
+            @keyframes chompTxt {
+                0% {
+                    transform: scale(0.4) translateY(0);
+                    opacity: 1;
+                }
+                40% {
+                    transform: scale(1.3) translateY(-22px);
+                    opacity: 1;
+                }
+                100% {
+                    transform: scale(0.7) translateY(-55px);
+                    opacity: 0;
+                }
+            }
+
+            .money-float {
+                position: fixed;
+                pointer-events: none;
+                z-index: 500;
+                font-family: ‘Boogaloo’, cursive;
+                color: var(–gold);
+                text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+                animation: moneyFly 1.1s ease-out forwards;
+            }
+            @keyframes moneyFly {
+                0% {
+                    transform: translateY(0) scale(0.75);
+                    opacity: 1;
+                }
+                55% {
+                    transform: translateY(-75px) scale(1.1);
+                    opacity: 1;
+                }
+                100% {
+                    transform: translateY(-130px) scale(0.85);
+                    opacity: 0;
+                }
+            }
+
+            /* Drool effect */
+            .drool {
+                position: fixed;
+                pointer-events: none;
+                z-index: 499;
+                width: 6px;
+                border-radius: 0 0 4px 4px;
+                background: linear-gradient(
+                    to bottom,
+                    rgba(200, 230, 255, 0),
+                    rgba(200, 230, 255, 0.55)
+                );
+                animation: droolFall 0.9s ease-in forwards;
+            }
+            @keyframes droolFall {
+                0% {
+                    height: 0;
+                    opacity: 0.7;
+                }
+                80% {
+                    height: 40px;
+                    opacity: 0.6;
+                }
+                100% {
+                    height: 50px;
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+            }
+
+            /* Sparkle burst */
+            .sparkle {
+                position: fixed;
+                pointer-events: none;
+                z-index: 501;
+                width: var(–sz);
+                height: var(–sz);
+                background: var(–col);
+                border-radius: 50%;
+                animation: sparkBurst 0.5s ease-out forwards;
+            }
+            @keyframes sparkBurst {
+                0% {
+                    transform: translate(0, 0) scale(0);
+                    opacity: 1;
+                }
+                100% {
+                    transform: translate(var(–tx), var(–ty)) scale(1);
+                    opacity: 0;
+                }
+            }
+
+            /* Done message */
+            .done-msg {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                text-align: center;
+                z-index: 600;
+                display: none;
+                pointer-events: none;
+            }
+            .done-msg.vis {
+                display: block;
+                animation: popInCenter 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            }
+            @keyframes popInCenter {
+                0% {
+                    transform: translate(-50%, -50%) scale(0) rotate(-8deg);
+                    opacity: 0;
+                }
+                100% {
+                    transform: translate(-50%, -50%) scale(1);
+                    opacity: 1;
+                }
+            }
+            .done-msg h2 {
+                font-family: ‘Boogaloo’, cursive;
+                font-size: 3.2rem;
+                color: var(–accent);
+                text-shadow:
+                    3px 3px 0 #5a2d0c,
+                    0 0 28px rgba(255, 152, 0, 0.7);
+            }
+            .done-earned {
+                font-family:
+                    ‘Fredoka One’,
+                    cursive;
+                font-size: 1.4rem;
+                color: var(–gold);
+                margin-top: 6px;
+                animation: pulse-earn 0.6s ease-in-out infinite alternate;
+            }
+            @keyframes pulse-earn {
+                from {
+                    transform: scale(1);
+                }
+                to {
+                    transform: scale(1.08);
+                }
+            }
+
+            /* Overlays */
+            .eat-hint {
+                position: fixed;
+                top: 68px;
+                left: 50%;
+                transform: translateX(-50%);
+                font-size: 0.75rem;
+                opacity: 0.35;
+                letter-spacing: 3px;
+                text-transform: uppercase;
+                pointer-events: none;
+                animation: hpulse 2.5s ease-in-out infinite;
+                white-space: nowrap;
+            }
+            @keyframes hpulse {
+                0%,
+                100% {
+                    opacity: 0.2;
+                }
+                50% {
+                    opacity: 0.45;
+                }
+            }
+            .auto-lbl {
+                position: fixed;
+                bottom: 48px;
+                right: 18px;
+                z-index: 300;
+                font-family: ‘Boogaloo’, cursive;
+                font-size: 0.75rem;
+                color: rgba(255, 200, 100, 0.45);
+                display: none;
+            }
+            .auto-lbl.on {
+                display: block;
+                animation: hpulse 1s ease-in-out infinite;
+            }
+            .combo-lbl {
+                position: fixed;
+                top: 68px;
+                left: 18px;
+                z-index: 300;
+                font-family: ‘Boogaloo’, cursive;
+                font-size: 1.1rem;
+                color: #ff6f00;
+                text-shadow: 0 0 10px rgba(255, 100, 0, 0.5);
+                display: none;
+            }
+            .combo-lbl.on {
+                display: block;
+                animation: hpulse 0.4s ease-in-out infinite;
+            }
+
+            /* Toast */
+            .toast {
+                position: fixed;
+                top: 66px;
+                right: 18px;
+                z-index: 800;
+                background: linear-gradient(
+                    135deg,
+                    rgba(255, 152, 0, 0.97),
+                    rgba(200, 60, 0, 0.95)
+                );
+                color: #fff;
+                border-radius: 12px;
+                padding: 9px 15px;
+                font-family: ‘Boogaloo’, cursive;
+                font-size: 0.95rem;
+                box-shadow: 0 4px 18px rgba(255, 152, 0, 0.5);
+                transform: translateX(220px);
+                transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+                pointer-events: none;
+            }
+            .toast.show {
+                transform: translateX(0);
+            }
+
+            /* Prestige glow when high level */
+            .prestige-glow {
+                position: fixed;
+                inset: 0;
+                pointer-events: none;
+                z-index: 1;
+                background: radial-gradient(
+                    ellipse at center bottom,
+                    rgba(255, 215, 0, 0.06),
+                    transparent 65%
+                );
+                opacity: 0;
+                transition: opacity 1.5s;
+            }
+            .prestige-glow.on {
+                opacity: 1;
+            }
+
+            /* Table */
+            .table {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 200px;
+                background: linear-gradient(to top, #0d0600, transparent);
+                z-index: 50;
+                pointer-events: none;
+            }
+            /* dots */
+            .bg-dots {
+                position: fixed;
+                inset: 0;
+                pointer-events: none;
+                z-index: 0;
+                background-image: radial-gradient(
+                    circle,
+                    rgba(255, 152, 0, 0.05) 1px,
+                    transparent 1px
+                );
+                background-size: 32px 32px;
+            }
+        </style>
+    </head>
+    <body>
+        <!-- custom cursor = animated mouth -->
+        <div class="mouth-wrap" id="mouthCursor">
+            <div class="mouth-top" id="mouthTop">😁</div>
+        </div>
+
+        <div class="bite-flash" id="biteFlash"></div>
+        <div class="bg-dots"></div>
+        <div class="prestige-glow" id="prestigeGlow"></div>
+        <div class="table"></div>
+
+        <!-- HUD -->
+
+        <div class="hud">
+            <div class="hud-title">🍔 MEGA MUNCH</div>
+            <div class="hud-center">
+                <div class="stat-box">
+                    <div class="stat-label">Burgers</div>
+                    <div class="stat-value" id="burgerCount">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Bites</div>
+                    <div class="stat-value" id="biteCount">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Total $</div>
+                    <div class="stat-value" id="totalEarned">0</div>
+                </div>
+                <div class="money-hud">
+                    <span style="font-size: 1.2rem">💰</span
+                    ><span class="money-val" id="moneyVal">$0</span>
+                </div>
+            </div>
+            <button class="shop-btn" onclick="toggleShop()">
+                🛒 SHOP
+                <span class="notif" id="shopNotif" style="display: none"
+                    >!</span
+                >
+            </button>
+        </div>
+
+        <div class="eat-hint" id="eatHint">👆 CLICK THE BURGER TO MUNCH!</div>
+        <div class="auto-lbl" id="autoLbl">⚡ AUTO-MUNCHING</div>
+        <div class="combo-lbl" id="comboLbl"></div>
+
+        <!-- Scene -->
+
+        <div class="scene" id="scene">
+            <div class="burger-wrap" id="burgerWrap">
+                <div class="burger" id="burger"></div>
+            </div>
+            <div class="hands" id="hands">
+                <div class="hand hand-left">
+                    <svg
+                        viewBox="0 0 210 190"
+                        xmlns="http://www.w3.org/2000/svg"
+                    >
+                        <ellipse
+                            cx="95"
+                            cy="138"
+                            rx="74"
+                            ry="57"
+                            fill="#d4a070"
+                        />
+                        <ellipse
+                            cx="95"
+                            cy="142"
+                            rx="72"
+                            ry="55"
+                            fill="#f0bb88"
+                        />
+                        <rect
+                            x="32"
+                            y="52"
+                            width="30"
+                            height="84"
+                            rx="15"
+                            fill="#f0bb88"
+                        />
+                        <rect
+                            x="66"
+                            y="30"
+                            width="30"
+                            height="100"
+                            rx="15"
+                            fill="#f0bb88"
+                        />
+                        <rect
+                            x="100"
+                            y="24"
+                            width="30"
+                            height="100"
+                            rx="15"
+                            fill="#f0bb88"
+                        />
+                        <rect
+                            x="133"
+                            y="36"
+                            width="28"
+                            height="92"
+                            rx="14"
+                            fill="#f0bb88"
+                        />
+                        <!-- knuckle lines -->
+                        <line
+                            x1="36"
+                            y1="136"
+                            x2="58"
+                            y2="136"
+                            stroke="#d4a070"
+                            stroke-width="3"
+                            stroke-linecap="round"
+                        />
+                        <line
+                            x1="70"
+                            y1="136"
+                            x2="92"
+                            y2="136"
+                            stroke="#d4a070"
+                            stroke-width="3"
+                            stroke-linecap="round"
+                        />
+                        <line
+                            x1="104"
+                            y1="136"
+                            x2="126"
+                            y2="136"
+                            stroke="#d4a070"
+                            stroke-width="3"
+                            stroke-linecap="round"
+                        />
+                        <ellipse
+                            cx="24"
+                            cy="120"
+                            rx="15"
+                            ry="22"
+                            fill="#f0bb88"
+                            transform="rotate(-22,24,120)"
+                        />
+                        <!-- nail hints -->
+                        <ellipse
+                            cx="47"
+                            cy="55"
+                            rx="8"
+                            ry="4"
+                            fill="#e8a878"
+                            opacity=".6"
+                        />
+                        <ellipse
+                            cx="81"
+                            cy="33"
+                            rx="8"
+                            ry="4"
+                            fill="#e8a878"
+                            opacity=".6"
+                        />
+                        <ellipse
+                            cx="115"
+                            cy="27"
+                            rx="8"
+                            ry="4"
+                            fill="#e8a878"
+                            opacity=".6"
+                        />
+                        <ellipse
+                            cx="147"
+                            cy="38"
+                            rx="7"
+                            ry="4"
+                            fill="#e8a878"
+                            opacity=".6"
+                        />
+                    </svg>
+                </div>
+                <div class="hand hand-right">
+                    <svg
+                        viewBox="0 0 210 190"
+                        xmlns="http://www.w3.org/2000/svg"
+                    >
+                        <ellipse
+                            cx="95"
+                            cy="138"
+                            rx="74"
+                            ry="57"
+                            fill="#d4a070"
+                        />
+                        <ellipse
+                            cx="95"
+                            cy="142"
+                            rx="72"
+                            ry="55"
+                            fill="#f0bb88"
+                        />
+                        <rect
+                            x="32"
+                            y="52"
+                            width="30"
+                            height="84"
+                            rx="15"
+                            fill="#f0bb88"
+                        />
+                        <rect
+                            x="66"
+                            y="30"
+                            width="30"
+                            height="100"
+                            rx="15"
+                            fill="#f0bb88"
+                        />
+                        <rect
+                            x="100"
+                            y="24"
+                            width="30"
+                            height="100"
+                            rx="15"
+                            fill="#f0bb88"
+                        />
+                        <rect
+                            x="133"
+                            y="36"
+                            width="28"
+                            height="92"
+                            rx="14"
+                            fill="#f0bb88"
+                        />
+                        <line
+                            x1="36"
+                            y1="136"
+                            x2="58"
+                            y2="136"
+                            stroke="#d4a070"
+                            stroke-width="3"
+                            stroke-linecap="round"
+                        />
+                        <line
+                            x1="70"
+                            y1="136"
+                            x2="92"
+                            y2="136"
+                            stroke="#d4a070"
+                            stroke-width="3"
+                            stroke-linecap="round"
+                        />
+                        <line
+                            x1="104"
+                            y1="136"
+                            x2="126"
+                            y2="136"
+                            stroke="#d4a070"
+                            stroke-width="3"
+                            stroke-linecap="round"
+                        />
+                        <ellipse
+                            cx="24"
+                            cy="120"
+                            rx="15"
+                            ry="22"
+                            fill="#f0bb88"
+                            transform="rotate(-22,24,120)"
+                        />
+                        <ellipse
+                            cx="47"
+                            cy="55"
+                            rx="8"
+                            ry="4"
+                            fill="#e8a878"
+                            opacity=".6"
+                        />
+                        <ellipse
+                            cx="81"
+                            cy="33"
+                            rx="8"
+                            ry="4"
+                            fill="#e8a878"
+                            opacity=".6"
+                        />
+                        <ellipse
+                            cx="115"
+                            cy="27"
+                            rx="8"
+                            ry="4"
+                            fill="#e8a878"
+                            opacity=".6"
+                        />
+                        <ellipse
+                            cx="147"
+                            cy="38"
+                            rx="7"
+                            ry="4"
+                            fill="#e8a878"
+                            opacity=".6"
+                        />
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress -->
+
+        <div class="progress-wrap" id="progressWrap">
+            <div class="progress-label">🍔 BURGER PROGRESS</div>
+            <div class="pbar-bg" id="pbarBg">
+                <div class="pbar-fill" id="pbarFill" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <button class="new-btn" id="newBtn" onclick="newBurger()">
+            🍔 ORDER ANOTHER BURGER!
+        </button>
+
+        <div class="done-msg" id="doneMsg">
+            <h2>BURGER DEMOLISHED! 🎉</h2>
+            <p class="done-earned" id="doneEarned"></p>
+        </div>
+
+        <!-- Shop -->
+
+        <div class="shop-overlay" id="shopOverlay" onclick="closeShop()"></div>
+        <div class="shop-panel" id="shopPanel">
+            <div class="shop-header">
+                <div class="shop-header-row">
+                    <div class="shop-title">🛒 UPGRADE SHOP</div>
+                    <button class="shop-close" onclick="closeShop()">✕</button>
+                </div>
+                <div class="shop-bal">
+                    💰 <span id="shopBal">$0</span> <small>available</small>
+                </div>
+            </div>
+            <div class="tab-row" id="tabRow"></div>
+            <div id="upgradeBody"></div>
+        </div>
+
+        <div class="toast" id="toast">✨ Upgrade affordable!</div>
+
+        <script>
+            /* ═══════════════ STATE ═══════════════ */
+            let money = 0,
+                bites = 0,
+                burgers = 0,
+                totalEarned = 0;
+            let layer = 0,
+                eating = false,
+                shopOpen = false;
+            let combo = 0,
+                comboTimer = null;
+            const COMBO_WIN = 1100;
+            let autoInterval = null,
+                prevAffordable = 0;
+            const TOTAL = 8;
+
+            /* ═══════════════ UPGRADES ═══════════════ */
+            const UPG = {
+                /* ── EATING ── */
+                speed: {
+                    cat: "eating",
+                    name: "Bite Speed",
+                    icon: "⚡",
+                    desc: "Reduce cooldown between bites.",
+                    level: 0,
+                    max: 6,
+                    costs: [10, 28, 70, 170, 400, 900],
+                    cd: [340, 240, 150, 80, 35, 14, 6],
+                    stat: () => `${UPG.speed.cd[UPG.speed.level]}ms cooldown`,
+                    nxt: () =>
+                        UPG.speed.level < UPG.speed.max
+                            ? `→ ${UPG.speed.cd[UPG.speed.level + 1]}ms`
+                            : null,
+                },
+                biteSize: {
+                    cat: "eating",
+                    name: "Bite Size",
+                    icon: "🦷",
+                    desc: "Devour multiple layers per click.",
+                    level: 0,
+                    max: 4,
+                    costs: [20, 55, 135, 310],
+                    lpp: [1, 2, 3, 4, 5],
+                    stat: () =>
+                        `${UPG.biteSize.lpp[UPG.biteSize.level]} layer${UPG.biteSize.lpp[UPG.biteSize.level] > 1 ? "s" : ""}/bite`,
+                    nxt: () =>
+                        UPG.biteSize.level < UPG.biteSize.max
+                            ? `→ ${UPG.biteSize.lpp[UPG.biteSize.level + 1]} layers`
+                            : null,
+                },
+                jawStrength: {
+                    cat: "eating",
+                    name: "Jaw Strength",
+                    icon: "💪",
+                    desc: "Chance to eat an extra bonus layer.",
+                    level: 0,
+                    max: 4,
+                    costs: [30, 75, 180, 420],
+                    chances: [0, 0.15, 0.3, 0.5, 0.7],
+                    stat: () =>
+                        UPG.jawStrength.level === 0
+                            ? "No bonus bites"
+                            : `${Math.round(UPG.jawStrength.chances[UPG.jawStrength.level] * 100)}% extra layer chance`,
+                    nxt: () =>
+                        UPG.jawStrength.level < UPG.jawStrength.max
+                            ? `→ ${Math.round(UPG.jawStrength.chances[UPG.jawStrength.level + 1] * 100)}%`
+                            : null,
+                },
+                mouthSize: {
+                    cat: "eating",
+                    name: "Mega Mouth",
+                    icon: "👄",
+                    desc: "Bigger bites = more particles & screen shake.",
+                    level: 0,
+                    max: 3,
+                    costs: [25, 65, 160],
+                    stat: () =>
+                        [
+                            "Normal mouth",
+                            "Big mouth",
+                            "Huge mouth",
+                            "MEGAMOUTH",
+                        ][UPG.mouthSize.level],
+                    nxt: () =>
+                        UPG.mouthSize.level < UPG.mouthSize.max
+                            ? `→ ${["Normal mouth", "Big mouth", "Huge mouth", "MEGAMOUTH"][UPG.mouthSize.level + 1]}`
+                            : null,
+                },
+                /* ── MONEY ── */
+                cashMult: {
+                    cat: "money",
+                    name: "Fat Wallet",
+                    icon: "💵",
+                    desc: "Earn more per burger completed.",
+                    level: 0,
+                    max: 6,
+                    costs: [15, 42, 105, 260, 620, 1400],
+                    mults: [1, 1.5, 2.5, 4, 6, 10, 16],
+                    base: 10,
+                    earn: () =>
+                        Math.round(10 * UPG.cashMult.mults[UPG.cashMult.level]),
+                    stat: () => `$${UPG.cashMult.earn()} per burger`,
+                    nxt: () =>
+                        UPG.cashMult.level < UPG.cashMult.max
+                            ? `→ $${Math.round(10 * UPG.cashMult.mults[UPG.cashMult.level + 1])}`
+                            : null,
+                },
+                goldenJaw: {
+                    cat: "money",
+                    name: "Golden Jaw",
+                    icon: "🥇",
+                    desc: "Random cash bonus on each bite.",
+                    level: 0,
+                    max: 4,
+                    costs: [35, 95, 240, 560],
+                    chances: [0, 0.15, 0.28, 0.45, 0.65],
+                    bonuses: [0, 3, 6, 12, 20],
+                    stat: () =>
+                        UPG.goldenJaw.level === 0
+                            ? "No bonus"
+                            : `${Math.round(UPG.goldenJaw.chances[UPG.goldenJaw.level] * 100)}% → +$${UPG.goldenJaw.bonuses[UPG.goldenJaw.level]}`,
+                    nxt: () =>
+                        UPG.goldenJaw.level < UPG.goldenJaw.max
+                            ? `→ ${Math.round(UPG.goldenJaw.chances[UPG.goldenJaw.level + 1] * 100)}% (+$${UPG.goldenJaw.bonuses[UPG.goldenJaw.level + 1]})`
+                            : null,
+                },
+                comboStreak: {
+                    cat: "money",
+                    name: "Combo Streak",
+                    icon: "🔥",
+                    desc: "Rapid bites multiply your burger reward.",
+                    level: 0,
+                    max: 4,
+                    costs: [45, 115, 280, 660],
+                    maxM: [1, 1.6, 2.4, 3.5, 5],
+                    stat: () =>
+                        `Max ${UPG.comboStreak.maxM[UPG.comboStreak.level]}x combo`,
+                    nxt: () =>
+                        UPG.comboStreak.level < UPG.comboStreak.max
+                            ? `→ ${UPG.comboStreak.maxM[UPG.comboStreak.level + 1]}x`
+                            : null,
+                },
+                sauceDrip: {
+                    cat: "money",
+                    name: "Sauce Drip",
+                    icon: "🍯",
+                    desc: "Earn passive income every few seconds.",
+                    level: 0,
+                    max: 5,
+                    costs: [60, 140, 320, 750, 1800],
+                    perSec: [0, 1, 3, 7, 15, 30],
+                    stat: () =>
+                        UPG.sauceDrip.level === 0
+                            ? "No passive income"
+                            : `+$${UPG.sauceDrip.perSec[UPG.sauceDrip.level]}/sec`,
+                    nxt: () =>
+                        UPG.sauceDrip.level < UPG.sauceDrip.max
+                            ? `→ +$${UPG.sauceDrip.perSec[UPG.sauceDrip.level + 1]}/sec`
+                            : null,
+                },
+                streakBonus: {
+                    cat: "money",
+                    name: "Burger Streak",
+                    icon: "🏆",
+                    desc: "Earn bonus for consecutive burgers.",
+                    level: 0,
+                    max: 3,
+                    costs: [80, 200, 480],
+                    bonus: [0, 5, 12, 25],
+                    stat: () =>
+                        UPG.streakBonus.level === 0
+                            ? "No streak bonus"
+                            : `+$${UPG.streakBonus.bonus[UPG.streakBonus.level]} per burger in streak`,
+                    nxt: () =>
+                        UPG.streakBonus.level < UPG.streakBonus.max
+                            ? `→ +$${UPG.streakBonus.bonus[UPG.streakBonus.level + 1]}`
+                            : null,
+                },
+                /* ── AUTO ── */
+                autoMunch: {
+                    cat: "auto",
+                    name: "Auto Munch",
+                    icon: "🤖",
+                    desc: "Robot jaw eats while you relax.",
+                    level: 0,
+                    max: 5,
+                    costs: [50, 130, 300, 700, 1600],
+                    intervals: [0, 2500, 1200, 600, 250, 80],
+                    labels: [
+                        "Off",
+                        "Slow (2.5s)",
+                        "Medium (1.2s)",
+                        "Fast (0.6s)",
+                        "Turbo (0.25s)",
+                        "WARP (0.08s)",
+                    ],
+                    stat: () => UPG.autoMunch.labels[UPG.autoMunch.level],
+                    nxt: () =>
+                        UPG.autoMunch.level < UPG.autoMunch.max
+                            ? `→ ${UPG.autoMunch.labels[UPG.autoMunch.level + 1]}`
+                            : null,
+                },
+                autoBurger: {
+                    cat: "auto",
+                    name: "Auto Order",
+                    icon: "📦",
+                    desc: "Automatically orders a new burger when done.",
+                    level: 0,
+                    max: 1,
+                    costs: [200],
+                    stat: () =>
+                        UPG.autoBurger.level === 0
+                            ? "Manual ordering"
+                            : "Auto-orders new burgers",
+                    nxt: () => null,
+                },
+                doublePatty: {
+                    cat: "auto",
+                    name: "Double Patty",
+                    icon: "🥩",
+                    desc: "Auto-munch speed doubled for patty layers.",
+                    level: 0,
+                    max: 3,
+                    costs: [110, 270, 640],
+                    stat: () =>
+                        UPG.doublePatty.level === 0
+                            ? "No patty bonus"
+                            : `Patty auto-eat ${[1, 2, 3, 4][UPG.doublePatty.level]}x faster`,
+                    nxt: () =>
+                        UPG.doublePatty.level < UPG.doublePatty.max
+                            ? `→ ${[1, 2, 3, 4][UPG.doublePatty.level + 1]}x faster`
+                            : null,
+                },
+                /* ── COSMETIC / POWER ── */
+                screenShake: {
+                    cat: "power",
+                    name: "Earthquake Jaw",
+                    icon: "🌋",
+                    desc: "Unlock screen shake for power bites.",
+                    level: 0,
+                    max: 3,
+                    costs: [40, 100, 250],
+                    intensity: [0, 3, 7, 14],
+                    stat: () =>
+                        UPG.screenShake.level === 0
+                            ? "No shake"
+                            : `Shake intensity ${UPG.screenShake.intensity[UPG.screenShake.level]}`,
+                    nxt: () =>
+                        UPG.screenShake.level < UPG.screenShake.max
+                            ? `→ intensity ${UPG.screenShake.intensity[UPG.screenShake.level + 1]}`
+                            : null,
+                },
+                sparkleExplosion: {
+                    cat: "power",
+                    name: "Sparkle Burst",
+                    icon: "✨",
+                    desc: "Extra sparkle particles on every bite.",
+                    level: 0,
+                    max: 3,
+                    costs: [28, 70, 170],
+                    count: [0, 4, 10, 20],
+                    stat: () =>
+                        UPG.sparkleExplosion.level === 0
+                            ? "No sparkles"
+                            : `${UPG.sparkleExplosion.count[UPG.sparkleExplosion.level]} sparkles/bite`,
+                    nxt: () =>
+                        UPG.sparkleExplosion.level < UPG.sparkleExplosion.max
+                            ? `→ ${UPG.sparkleExplosion.count[UPG.sparkleExplosion.level + 1]} sparkles`
+                            : null,
+                },
+                critBite: {
+                    cat: "power",
+                    name: "Critical Bite",
+                    icon: "💥",
+                    desc: "Rare CRIT bite earns 10x money.",
+                    level: 0,
+                    max: 3,
+                    costs: [90, 220, 540],
+                    critChance: [0, 0.05, 0.12, 0.22],
+                    stat: () =>
+                        UPG.critBite.level === 0
+                            ? "No crits"
+                            : `${Math.round(UPG.critBite.critChance[UPG.critBite.level] * 100)}% crit chance (10x)`,
+                    nxt: () =>
+                        UPG.critBite.level < UPG.critBite.max
+                            ? `→ ${Math.round(UPG.critBite.critChance[UPG.critBite.level + 1] * 100)}%`
+                            : null,
+                },
+                droolFactor: {
+                    cat: "power",
+                    name: "Drool Factor",
+                    icon: "🤤",
+                    desc: "Visual drool adds +$1 bonus per drool.",
+                    level: 0,
+                    max: 3,
+                    costs: [22, 58, 145],
+                    freq: [0, 0.25, 0.5, 1.0],
+                    stat: () =>
+                        UPG.droolFactor.level === 0
+                            ? "No drool"
+                            : `${Math.round(UPG.droolFactor.freq[UPG.droolFactor.level] * 100)}% drool chance (+$1)`,
+                    nxt: () =>
+                        UPG.droolFactor.level < UPG.droolFactor.max
+                            ? `→ ${Math.round(UPG.droolFactor.freq[UPG.droolFactor.level + 1] * 100)}%`
+                            : null,
+                },
+            };
+
+            const CATS = {
+                eating: {
+                    label: "🍴 Eating",
+                    keys: ["speed", "biteSize", "jawStrength", "mouthSize"],
+                },
+                money: {
+                    label: "💰 Money",
+                    keys: [
+                        "cashMult",
+                        "goldenJaw",
+                        "comboStreak",
+                        "sauceDrip",
+                        "streakBonus",
+                    ],
+                },
+                auto: {
+                    label: "🤖 Auto",
+                    keys: ["autoMunch", "autoBurger", "doublePatty"],
+                },
+                power: {
+                    label: "⚡ Power",
+                    keys: [
+                        "screenShake",
+                        "sparkleExplosion",
+                        "critBite",
+                        "droolFactor",
+                    ],
+                },
+            };
+            let activeTab = "eating";
+
+            /* ═══════════════ CURSOR ═══════════════ */
+            const mouthCursor = document.getElementById("mouthCursor");
+            const mouthTop = document.getElementById("mouthTop");
+            document.addEventListener("mousemove", (e) => {
+                mouthCursor.style.left = e.clientX + "px";
+                mouthCursor.style.top = e.clientY + "px";
+            });
+
+            function setCursorEmoji(state) {
+                if (shopOpen) {
+                    mouthTop.textContent = "🖱️";
+                    mouthCursor.className = "mouth-wrap";
+                    return;
+                }
+                if (state === "chomp") {
+                    mouthTop.textContent = "😬";
+                    mouthCursor.className = "mouth-wrap chomp";
+                } else if (state === "done") {
+                    mouthTop.textContent = "😋";
+                    mouthCursor.className = "mouth-wrap";
+                } else {
+                    mouthTop.textContent = "😮";
+                    mouthCursor.className = "mouth-wrap open";
+                }
+            }
+            setCursorEmoji("idle");
+
+            /* ═══════════════ MONEY ═══════════════ */
+            let burgerStreak = 0;
+            let sauceTimer = null;
+
+            function addMoney(amt, x, y, label, big) {
+                money += amt;
+                totalEarned += amt;
+                const mv = document.getElementById("moneyVal");
+                mv.textContent = "$" + money;
+                mv.classList.remove("bump");
+                void mv.offsetWidth;
+                mv.classList.add("bump");
+                document.getElementById("shopBal").textContent = "$" + money;
+                document.getElementById("totalEarned").textContent =
+                    totalEarned;
+                spawnFloat(amt, x, y, label, big);
+                checkAffordable();
+            }
+
+            function spawnFloat(amt, x, y, label, big) {
+                const el = document.createElement("div");
+                el.className = "money-float";
+                el.textContent = label || "+$" + amt;
+                el.style.left = (x || window.innerWidth / 2) - 45 + "px";
+                el.style.top = (y || window.innerHeight / 2) - 10 + "px";
+                if (big || amt >= 20) {
+                    el.style.fontSize = "2rem";
+                    el.style.color = "#ffe57f";
+                }
+                document.body.appendChild(el);
+                setTimeout(() => el.remove(), 1200);
+            }
+
+            function setupSauceTimer() {
+                clearInterval(sauceTimer);
+                sauceTimer = null;
+                const rate = UPG.sauceDrip.perSec[UPG.sauceDrip.level];
+                if (rate > 0) {
+                    sauceTimer = setInterval(() => {
+                        addMoney(
+                            rate,
+                            window.innerWidth * (0.3 + Math.random() * 0.4),
+                            80,
+                            `💧 +$${rate}`,
+                        );
+                    }, 1000);
+                }
+            }
+
+            /* ═══════════════ BURGER BUILD ═══════════════ */
+            function buildBurger() {
+                const b = document.getElementById("burger");
+                b.innerHTML = "";
+                layer = 0;
+                eating = false;
+                document.getElementById("pbarFill").style.width = "0%";
+                buildPbarSegs();
+                [
+                    makeBunTop(),
+                    makeLettuce(),
+                    makeTomato(),
+                    makeCheese(),
+                    makePatty(),
+                    makeOnion(),
+                    makePickle(),
+                    makeBunBot(),
+                ].forEach((el, i) => {
+                    el.id = "L" + i;
+                    b.appendChild(el);
+                });
+                document.getElementById("doneMsg").classList.remove("vis");
+                document.getElementById("newBtn").classList.remove("vis");
+                document.getElementById("progressWrap").style.display = "block";
+                document.getElementById("eatHint").style.display = "block";
+                setCursorEmoji("idle");
+                combo = 0;
+                updateComboDisplay();
+                setupAutoMunch();
+            }
+
+            function buildPbarSegs() {
+                const bg = document.getElementById("pbarBg");
+                bg.querySelectorAll(".pbar-seg").forEach((s) => s.remove());
+                for (let i = 1; i < TOTAL; i++) {
+                    const s = document.createElement("div");
+                    s.className = "pbar-seg";
+                    s.style.left = (i / TOTAL) * 100 + "%";
+                    bg.appendChild(s);
+                }
+            }
+
+            const W = (el) => {
+                const d = document.createElement("div");
+                d.className = "layer";
+                d.appendChild(el);
+                return d;
+            };
+            function makeBunTop() {
+                const b = document.createElement("div");
+                b.className = "bun-top";
+                [
+                    { x: 30, y: 18, w: 14, h: 7, r: -15 },
+                    { x: 70, y: 12, w: 18, h: 8, r: 10 },
+                    { x: 120, y: 8, w: 16, h: 7, r: -5 },
+                    { x: 170, y: 14, w: 15, h: 7, r: 20 },
+                    { x: 220, y: 10, w: 17, h: 8, r: -10 },
+                    { x: 260, y: 20, w: 14, h: 6, r: 15 },
+                    { x: 50, y: 35, w: 15, h: 7, r: 5 },
+                    { x: 100, y: 30, w: 18, h: 8, r: -20 },
+                    { x: 150, y: 28, w: 16, h: 7, r: 12 },
+                    { x: 200, y: 32, w: 15, h: 7, r: -8 },
+                    { x: 240, y: 38, w: 13, h: 6, r: 18 },
+                    { x: 80, y: 50, w: 16, h: 7, r: -12 },
+                    { x: 135, y: 48, w: 18, h: 8, r: 8 },
+                    { x: 185, y: 46, w: 15, h: 7, r: -15 },
+                ].forEach((s) => {
+                    const d = document.createElement("div");
+                    d.className = "sesame";
+                    d.style.cssText = `left:${s.x}px;top:${s.y}px;width:${s.w}px;height:${s.h}px;--r:${s.r}deg;`;
+                    b.appendChild(d);
+                });
+                for (let i = 0; i < 3; i++) {
+                    const d = document.createElement("div");
+                    d.className = "sauce-drip";
+                    d.style.cssText = `left:${40 + i * 80}px;animation-delay:${i * 0.7}s;height:${8 + i * 4}px;`;
+                    b.appendChild(d);
+                }
+                return W(b);
+            }
+            function makeLettuce() {
+                const l = document.createElement("div");
+                l.className = "lettuce-wrap";
+                l.innerHTML = `<svg viewBox="0 0 340 28" xmlns="http://www.w3.org/2000/svg"><path d="M0,28 Q10,4 25,12 Q40,0 55,16 Q70,4 85,14 Q100,2 115,16 Q130,6 145,18 Q160,4 175,14 Q190,2 205,16 Q220,6 235,14 Q250,0 265,16 Q280,4 295,12 Q310,0 325,14 Q335,8 340,20 L340,28 Z" fill="#4caf50"/><path d="M0,28 Q10,8 25,16 Q40,4 55,18 Q70,8 85,18 Q100,6 115,20 Q130,10 145,22 Q160,8 175,18 Q190,6 205,20 Q220,10 235,18 Q250,4 265,20 Q280,8 295,16 Q310,4 325,18 Q335,12 340,24 L340,28 Z" fill="#66bb6a" opacity="0.7"/><path d="M5,28 Q15,12 30,20 Q50,8 65,20 Q85,12 100,22 Q120,14 135,24 Q155,16 170,24 Q190,14 205,24 Q225,16 240,22 Q260,12 275,22 Q295,14 310,20 Q325,10 340,22 L340,28 Z" fill="#81c784" opacity="0.5"/></svg>`;
+                return W(l);
+            }
+            function makeTomato() {
+                const d = document.createElement("div");
+                d.className = "tomato-layer";
+                return W(d);
+            }
+            function makeCheese() {
+                const d = document.createElement("div");
+                d.className = "cheese-wrap";
+                return W(d);
+            }
+            function makePatty() {
+                const d = document.createElement("div");
+                d.className = "patty-wrap";
+                return W(d);
+            }
+            function makeOnion() {
+                const o = document.createElement("div");
+                o.className = "onion-layer";
+                [35, 28, 32, 30, 28, 32, 28, 35, 30, 28, 32].forEach((s) => {
+                    const r = document.createElement("div");
+                    r.className = "onion-ring";
+                    r.style.width = s + "px";
+                    o.appendChild(r);
+                });
+                return W(o);
+            }
+            function makePickle() {
+                const pl = document.createElement("div");
+                pl.className = "pickle-layer";
+                [60, 45, 55, 48, 52, 45, 50].forEach((s) => {
+                    const d = document.createElement("div");
+                    d.className = "pickle-slice";
+                    d.style.width = s + "px";
+                    pl.appendChild(d);
+                });
+                return W(pl);
+            }
+            function makeBunBot() {
+                const d = document.createElement("div");
+                d.className = "bun-bot";
+                return W(d);
+            }
+
+            /* ═══════════════ EATING ═══════════════ */
+            const CHOMPS = [
+                "CHOMP!",
+                "MUNCH!",
+                "NOM!",
+                "CRUNCH!",
+                "GULP!",
+                "YUMMY!",
+                "SLURP!",
+                "DEVOUR!",
+                "OM NOM!",
+                "GNAW!",
+                "RAVAGE!",
+                "INHALE!",
+            ];
+            const PFOOD = [
+                "🧀",
+                "🥬",
+                "🍅",
+                "🥩",
+                "🧅",
+                "🥒",
+                "🍔",
+                "✨",
+                "⭐",
+                "💥",
+                "🔥",
+                "🫓",
+                "🫙",
+                "🧂",
+            ];
+            const LAYER_FLASH = [
+                "flash-bun",
+                "flash-lettuce",
+                "flash-tomato",
+                "flash-cheese",
+                "flash-patty",
+                "flash-onion",
+                "flash-pickle",
+                "flash-bun",
+            ];
+
+            function getCd() {
+                return UPG.speed.cd[UPG.speed.level];
+            }
+            function getLpp() {
+                return UPG.biteSize.lpp[UPG.biteSize.level];
+            }
+
+            function takeBite(e, isAuto) {
+                if (eating) return;
+                if (layer >= TOTAL) return;
+                eating = true;
+                bites++;
+                document.getElementById("biteCount").textContent = bites;
+
+                // jaw strength extra layer
+                let lpp = getLpp();
+                if (
+                    UPG.jawStrength.level > 0 &&
+                    Math.random() <
+                        UPG.jawStrength.chances[UPG.jawStrength.level]
+                )
+                    lpp++;
+                const toEat = Math.min(lpp, TOTAL - layer);
+                const isMulti = toEat > 1;
+
+                // CRIT check
+                let isCrit =
+                    UPG.critBite.level > 0 &&
+                    Math.random() < UPG.critBite.critChance[UPG.critBite.level];
+
+                setCursorEmoji("chomp");
+                document.getElementById("hands").classList.add("eating");
+
+                // Flash — colored per layer
+                const flash = document.getElementById("biteFlash");
+                flash.className =
+                    "bite-flash show " + (LAYER_FLASH[layer] || "flash-bun");
+                setTimeout(() => (flash.className = "bite-flash"), 140);
+
+                // Screen shake
+                if (UPG.screenShake.level > 0) {
+                    const scene = document.getElementById("scene");
+                    scene.classList.add("shaking");
+                    setTimeout(() => scene.classList.remove("shaking"), 290);
+                }
+
+                // Chomp text
+                if (!isAuto) {
+                    const word = isCrit
+                        ? "💥 CRITICAL!"
+                        : CHOMPS[Math.floor(Math.random() * CHOMPS.length)];
+                    const cx = e ? e.clientX : window.innerWidth / 2;
+                    const cy = e ? e.clientY : window.innerHeight / 2;
+                    const txt = document.createElement("div");
+                    txt.className = "chomp-txt";
+                    txt.textContent = word;
+                    const sz = isCrit
+                        ? 2.8
+                        : (isMulti ? 2.6 : 2.1) + UPG.mouthSize.level * 0.3;
+                    txt.style.cssText = `left:${cx - 65}px;top:${cy - 65}px;font-size:${sz}rem;`;
+                    if (isCrit) txt.style.color = "#ff4444";
+                    document.body.appendChild(txt);
+                    setTimeout(() => txt.remove(), 680);
+                }
+
+                // Particles
+                if (!isAuto) {
+                    const pCount =
+                        4 +
+                        UPG.mouthSize.level * 2 +
+                        (isMulti ? 4 : 0) +
+                        (isCrit ? 8 : 0);
+                    for (let i = 0; i < pCount; i++) {
+                        const p = document.createElement("div");
+                        p.className = "particle";
+                        p.textContent =
+                            PFOOD[Math.floor(Math.random() * PFOOD.length)];
+                        p.style.fontSize = 16 + UPG.mouthSize.level * 4 + "px";
+                        const ang = Math.random() * Math.PI * 2;
+                        const dist = 50 + Math.random() * 100;
+                        p.style.cssText += `left:${e ? e.clientX : window.innerWidth / 2}px;top:${e ? e.clientY : window.innerHeight / 2}px;--tx:${Math.cos(ang) * dist}px;--ty:${Math.sin(ang) * dist - 50}px;--tr:${Math.random() * 360}deg;animation-delay:${Math.random() * 0.12}s;`;
+                        document.body.appendChild(p);
+                        setTimeout(() => p.remove(), 900);
+                    }
+                }
+
+                // Sparkles
+                const sparks =
+                    UPG.sparkleExplosion.count[UPG.sparkleExplosion.level];
+                if (sparks > 0 && !isAuto) {
+                    const colors = [
+                        "#ffd700",
+                        "#ff9800",
+                        "#ff4444",
+                        "#4cff88",
+                        "#44ccff",
+                        "#ff88ff",
+                    ];
+                    for (let i = 0; i < sparks; i++) {
+                        const sp = document.createElement("div");
+                        sp.className = "sparkle";
+                        const ang = Math.random() * Math.PI * 2;
+                        const dist = 40 + Math.random() * 80;
+                        const sz = 4 + Math.random() * 6;
+                        sp.style.cssText = `left:${e ? e.clientX : window.innerWidth / 2}px;top:${e ? e.clientY : window.innerHeight / 2}px;--sz:${sz}px;--col:${colors[Math.floor(Math.random() * colors.length)]};--tx:${Math.cos(ang) * dist}px;--ty:${Math.sin(ang) * dist}px;`;
+                        document.body.appendChild(sp);
+                        setTimeout(() => sp.remove(), 520);
+                    }
+                }
+
+                // Drool
+                if (
+                    UPG.droolFactor.level > 0 &&
+                    Math.random() <
+                        UPG.droolFactor.freq[UPG.droolFactor.level] &&
+                    !isAuto
+                ) {
+                    const dr = document.createElement("div");
+                    dr.className = "drool";
+                    dr.style.left =
+                        window.innerWidth / 2 - 20 + Math.random() * 40 + "px";
+                    dr.style.top =
+                        (e ? e.clientY : window.innerHeight * 0.55) + "px";
+                    document.body.appendChild(dr);
+                    setTimeout(() => dr.remove(), 1000);
+                    setTimeout(
+                        () =>
+                            addMoney(
+                                1,
+                                e ? e.clientX : window.innerWidth / 2,
+                                e ? e.clientY : window.innerHeight / 2,
+                                "💧 +$1",
+                            ),
+                        300,
+                    );
+                }
+
+                // Combo
+                if (UPG.comboStreak.level > 0) {
+                    combo = Math.min(combo + 1, 12);
+                    clearTimeout(comboTimer);
+                    comboTimer = setTimeout(() => {
+                        combo = 0;
+                        updateComboDisplay();
+                    }, COMBO_WIN);
+                    updateComboDisplay();
+                }
+
+                // Golden jaw
+                if (
+                    UPG.goldenJaw.level > 0 &&
+                    Math.random() < UPG.goldenJaw.chances[UPG.goldenJaw.level]
+                ) {
+                    let bonus = UPG.goldenJaw.bonuses[UPG.goldenJaw.level];
+                    if (isCrit) bonus *= 10;
+                    const bx = e ? e.clientX : window.innerWidth / 2;
+                    const by = e ? e.clientY - 40 : window.innerHeight / 2 - 40;
+                    setTimeout(
+                        () => addMoney(bonus, bx, by, "⭐ +$" + bonus),
+                        180,
+                    );
+                }
+
+                // Crit base money bonus
+                if (isCrit && !isAuto) {
+                    const cb = UPG.cashMult.earn();
+                    setTimeout(
+                        () =>
+                            addMoney(
+                                cb,
+                                e ? e.clientX : window.innerWidth / 2,
+                                e
+                                    ? e.clientY - 60
+                                    : window.innerHeight / 2 - 60,
+                                "💥 CRIT +$" + cb,
+                                true,
+                            ),
+                        120,
+                    );
+                }
+
+                // Animate layers out — alternate left/right for style
+                const cls = isMulti ? "multi-chomp" : "chomping";
+                for (let i = 0; i < toEat; i++) {
+                    const lEl = document.getElementById("L" + (layer + i));
+                    if (!lEl) continue;
+                    lEl.classList.add(cls);
+                    // Add bite marks
+                    for (let j = 0; j < 2 + UPG.mouthSize.level; j++) {
+                        const bm = document.createElement("div");
+                        bm.className = "bite-mark";
+                        bm.textContent =
+                            ["🦷", "👄", "💥"][UPG.mouthSize.level] || "🦷";
+                        bm.style.cssText = `left:${15 + Math.random() * 70}%;top:${10 + Math.random() * 60}%;animation-delay:${j * 0.04}s;`;
+                        lEl.appendChild(bm);
+                    }
+                    setTimeout(
+                        () => {
+                            lEl.classList.remove(cls);
+                            lEl.classList.add(
+                                i % 2 === 0 ? "eaten-left" : "eaten-right",
+                            );
+                        },
+                        80 + i * 55,
+                    );
+                }
+
+                setTimeout(() => {
+                    layer += toEat;
+                    document.getElementById("pbarFill").style.width =
+                        (layer / TOTAL) * 100 + "%";
+                    setCursorEmoji("idle");
+                    document.getElementById("hands").classList.remove("eating");
+                    if (layer >= TOTAL) finishBurger(e);
+                    setTimeout(
+                        () => {
+                            eating = false;
+                        },
+                        Math.max(0, getCd() - 280),
+                    );
+                }, 290);
+            }
+
+            function updateComboDisplay() {
+                const el = document.getElementById("comboLbl");
+                if (combo >= 3 && UPG.comboStreak.level > 0) {
+                    const maxM = UPG.comboStreak.maxM[UPG.comboStreak.level];
+                    const m = Math.min(maxM, 1 + (combo - 2) * 0.25);
+                    el.textContent = `🔥 COMBO x${m.toFixed(1)} (${combo} bites)`;
+                    el.classList.add("on");
+                } else {
+                    el.classList.remove("on");
+                }
+            }
+
+            function finishBurger(e) {
+                burgers++;
+                document.getElementById("burgerCount").textContent = burgers;
+                clearInterval(autoInterval);
+                autoInterval = null;
+                document.getElementById("autoLbl").classList.remove("on");
+                burgerStreak++;
+
+                // Combo mult
+                let m = 1;
+                if (UPG.comboStreak.level > 0 && combo >= 3) {
+                    const maxM = UPG.comboStreak.maxM[UPG.comboStreak.level];
+                    m = Math.min(maxM, 1 + (combo - 2) * 0.25);
+                }
+                combo = 0;
+                updateComboDisplay();
+
+                const base = UPG.cashMult.earn();
+                const streak =
+                    UPG.streakBonus.bonus[UPG.streakBonus.level] *
+                    (burgerStreak - 1);
+                const earned = Math.round(base * m) + streak;
+
+                const cx = window.innerWidth / 2;
+                const cy = window.innerHeight / 2 - 70;
+                addMoney(
+                    earned,
+                    cx,
+                    cy,
+                    m > 1 ? `🔥 x${m.toFixed(1)} +$${earned}` : `+$${earned}`,
+                    true,
+                );
+
+                let txt = `💰 Earned $${earned}`;
+                if (m > 1) txt += ` (COMBO x${m.toFixed(1)})`;
+                if (streak > 0) txt += ` + $${streak} streak!`;
+                document.getElementById("doneEarned").textContent = txt;
+
+                setTimeout(() => {
+                    document.getElementById("doneMsg").classList.add("vis");
+                    document.getElementById("progressWrap").style.display =
+                        "none";
+                    document.getElementById("eatHint").style.display = "none";
+                    setCursorEmoji("done");
+                    // Check prestige glow
+                    if (burgers >= 10)
+                        document
+                            .getElementById("prestigeGlow")
+                            .classList.add("on");
+
+                    // Celebration
+                    for (let i = 0; i < 22; i++)
+                        setTimeout(() => {
+                            const p = document.createElement("div");
+                            p.className = "particle";
+                            p.textContent = [
+                                "🎉",
+                                "🍔",
+                                "⭐",
+                                "✨",
+                                "🎊",
+                                "💰",
+                                "🥳",
+                                "🏆",
+                            ][Math.floor(Math.random() * 8)];
+                            p.style.cssText = `left:${12 + Math.random() * 76}%;top:${22 + Math.random() * 38}%;font-size:${20 + Math.random() * 24}px;--tx:${(Math.random() - 0.5) * 240}px;--ty:${-80 - Math.random() * 170}px;--tr:${Math.random() * 720}deg;animation-duration:1.4s;`;
+                            document.body.appendChild(p);
+                            setTimeout(() => p.remove(), 1500);
+                        }, i * 80);
+
+                    // Auto-order
+                    if (UPG.autoBurger.level > 0) {
+                        setTimeout(() => newBurger(), 900);
+                    } else {
+                        document.getElementById("newBtn").classList.add("vis");
+                    }
+                }, 360);
+            }
+
+            function newBurger() {
+                buildBurger();
+            }
+
+            /* ═══════════════ AUTO MUNCH ═══════════════ */
+            function setupAutoMunch() {
+                clearInterval(autoInterval);
+                autoInterval = null;
+                const lvl = UPG.autoMunch.level;
+                if (lvl > 0) {
+                    document.getElementById("autoLbl").classList.add("on");
+                    let base = UPG.autoMunch.intervals[lvl];
+                    autoInterval = setInterval(() => {
+                        if (layer < TOTAL && !eating) {
+                            // double patty speed if on patty layer
+                            const onPatty = layer === 4;
+                            const divider = onPatty
+                                ? Math.pow(2, UPG.doublePatty.level)
+                                : 1;
+                            if (
+                                onPatty &&
+                                UPG.doublePatty.level > 0 &&
+                                Math.random() < 1 - 1 / divider
+                            ) {
+                                takeBite(null, true);
+                            } else {
+                                takeBite(null, true);
+                            }
+                        }
+                    }, base);
+                } else {
+                    document.getElementById("autoLbl").classList.remove("on");
+                }
+            }
+
+            /* ═══════════════ CLICK ═══════════════ */
+            document.getElementById("scene").addEventListener("click", (e) => {
+                if (shopOpen) return;
+                if (layer < TOTAL) takeBite(e);
+            });
+            document
+                .getElementById("burgerWrap")
+                .addEventListener("click", (e) => {
+                    if (shopOpen) return;
+                    e.stopPropagation();
+                    takeBite(e);
+                });
+
+            /* ═══════════════ SHOP ═══════════════ */
+            function toggleShop() {
+                shopOpen ? closeShop() : openShop();
+            }
+            function openShop() {
+                shopOpen = true;
+                document.getElementById("shopPanel").classList.add("open");
+                document.getElementById("shopOverlay").classList.add("open");
+                setCursorEmoji("shop");
+                renderTabs();
+                renderUpgrades();
+            }
+            function closeShop() {
+                shopOpen = false;
+                document.getElementById("shopPanel").classList.remove("open");
+                document.getElementById("shopOverlay").classList.remove("open");
+                setCursorEmoji("idle");
+            }
+
+            function renderTabs() {
+                const row = document.getElementById("tabRow");
+                row.innerHTML = "";
+                Object.entries(CATS).forEach(([k, c]) => {
+                    const t = document.createElement("button");
+                    t.className = "tab" + (k === activeTab ? " active" : "");
+                    t.textContent = c.label;
+                    t.onclick = () => {
+                        activeTab = k;
+                        renderTabs();
+                        renderUpgrades();
+                    };
+                    row.appendChild(t);
+                });
+            }
+
+            function renderUpgrades() {
+                const body = document.getElementById("upgradeBody");
+                body.innerHTML = "";
+                const sec = document.createElement("div");
+                sec.className = "upg-section active";
+                const lbl = document.createElement("div");
+                lbl.className = "sec-label";
+                lbl.textContent =
+                    "— " + CATS[activeTab].label.toUpperCase() + " UPGRADES —";
+                sec.appendChild(lbl);
+
+                CATS[activeTab].keys.forEach((key) => {
+                    const u = UPG[key];
+                    const maxed = u.level >= u.max;
+                    const cost = maxed ? null : u.costs[u.level];
+                    const afford = !maxed && money >= cost;
+
+                    const card = document.createElement("div");
+                    card.className =
+                        "upg-card" +
+                        (maxed
+                            ? " maxed"
+                            : afford
+                              ? " affordable"
+                              : " cant-afford");
+
+                    const row = document.createElement("div");
+                    row.className = "card-row";
+                    const left = document.createElement("div");
+                    left.className = "card-left";
+                    const ic = document.createElement("div");
+                    ic.className = "card-icon";
+                    ic.textContent = u.icon;
+                    const nd = document.createElement("div");
+                    const nm = document.createElement("div");
+                    nm.className = "card-name";
+                    nm.textContent = u.name;
+                    const ds = document.createElement("div");
+                    ds.className = "card-desc";
+                    ds.textContent = u.desc;
+                    nd.appendChild(nm);
+                    nd.appendChild(ds);
+                    left.appendChild(ic);
+                    left.appendChild(nd);
+                    row.appendChild(left);
+
+                    const btn = document.createElement("button");
+                    btn.className = "buy-btn";
+                    if (maxed) {
+                        btn.className += " done";
+                        btn.textContent = "✓ MAX";
+                    } else if (afford) {
+                        btn.className += " ok";
+                        btn.textContent = "$" + cost;
+                        btn.onclick = () => buy(key);
+                    } else {
+                        btn.className += " no";
+                        btn.textContent = "$" + cost;
+                    }
+                    row.appendChild(btn);
+                    card.appendChild(row);
+
+                    const stat = document.createElement("div");
+                    stat.className = "cur-stat";
+                    stat.textContent = u.stat();
+                    const nxt = u.nxt();
+                    if (nxt && !maxed) {
+                        const ns = document.createElement("span");
+                        ns.className = "nxt-stat";
+                        ns.textContent = " " + nxt;
+                        stat.appendChild(ns);
+                    }
+                    card.appendChild(stat);
+
+                    const pips = document.createElement("div");
+                    pips.className = "pips";
+                    for (let i = 0; i < u.max; i++) {
+                        const pip = document.createElement("div");
+                        pip.className =
+                            "pip" +
+                            (i < u.level
+                                ? u.level >= u.max
+                                    ? " on gold"
+                                    : " on"
+                                : "");
+                        pips.appendChild(pip);
+                    }
+                    card.appendChild(pips);
+                    sec.appendChild(card);
+                });
+                body.appendChild(sec);
+                document.getElementById("shopBal").textContent = "$" + money;
+            }
+
+            function buy(key) {
+                const u = UPG[key];
+                if (u.level >= u.max) return;
+                const cost = u.costs[u.level];
+                if (money < cost) return;
+                money -= cost;
+                u.level++;
+                document.getElementById("moneyVal").textContent = "$" + money;
+                document.getElementById("shopBal").textContent = "$" + money;
+                renderUpgrades();
+                if (key === "autoMunch") setupAutoMunch();
+                if (key === "sauceDrip") setupSauceTimer();
+                if (key === "autoBurger" && layer >= TOTAL) {
+                    newBurger();
+                }
+                // Pop icon
+                const p = document.createElement("div");
+                p.className = "particle";
+                p.textContent = u.icon;
+                p.style.fontSize = "2.2rem";
+                p.style.cssText += `left:50%;top:50%;--tx:${(Math.random() - 0.5) * 100}px;--ty:-110px;--tr:${Math.random() * 360}deg;animation-duration:.9s;`;
+                document.body.appendChild(p);
+                setTimeout(() => p.remove(), 1000);
+                checkAffordable();
+            }
+
+            function checkAffordable() {
+                let cnt = 0;
+                Object.values(UPG).forEach((u) => {
+                    if (u.level < u.max && money >= u.costs[u.level]) cnt++;
+                });
+                const notif = document.getElementById("shopNotif");
+                if (cnt > 0) {
+                    notif.textContent = cnt;
+                    notif.style.display = "inline-block";
+                    if (cnt > prevAffordable && !shopOpen) showToast();
+                } else notif.style.display = "none";
+                prevAffordable = cnt;
+                if (shopOpen) renderUpgrades();
+            }
+
+            function showToast() {
+                const t = document.getElementById("toast");
+                t.classList.add("show");
+                setTimeout(() => t.classList.remove("show"), 2400);
+            }
+
+            /* ═══════════════ INIT ═══════════════ */
+            buildBurger();
+            setupSauceTimer();
+            renderTabs();
+        </script>
+    </body>
+</html>
