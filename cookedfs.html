@@ -3,9 +3,9 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>HORIZON — FLIGHT SIMULATOR</title>
+        <title>CookedFS</title>
         <link
-            href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap"
+            href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap"
             rel="stylesheet"
         />
         <style>
@@ -17,6 +17,7 @@
             body {
                 background: #000;
                 overflow: hidden;
+                font-family: "Share Tech Mono", monospace;
             }
             canvas#c {
                 display: block;
@@ -25,6 +26,123 @@
                 left: 0;
             }
 
+            /* ── MAP SELECT ────────────────────────────────────────── */
+            #map-select {
+                position: fixed;
+                inset: 0;
+                z-index: 200;
+                background: #000;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 40px 20px;
+            }
+            #map-title {
+                font-family: "Orbitron", monospace;
+                font-size: clamp(28px, 5vw, 56px);
+                font-weight: 900;
+                letter-spacing: 10px;
+                color: #fff;
+                text-shadow: 0 0 40px rgba(255, 255, 255, 0.3);
+                margin-bottom: 6px;
+            }
+            #map-sub {
+                font-size: 10px;
+                letter-spacing: 6px;
+                color: rgba(255, 255, 255, 0.25);
+                margin-bottom: 44px;
+            }
+            #map-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 16px;
+                max-width: 920px;
+                width: 100%;
+            }
+            .map-card {
+                position: relative;
+                overflow: hidden;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 4px;
+                cursor: pointer;
+                aspect-ratio: 16/9;
+                transition:
+                    border-color 0.2s,
+                    transform 0.15s,
+                    box-shadow 0.2s;
+                background: #0a0a0a;
+            }
+            .map-card:hover {
+                border-color: rgba(255, 255, 255, 0.55);
+                transform: translateY(-3px);
+                box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8);
+            }
+            .map-card canvas {
+                width: 100%;
+                height: 100%;
+                display: block;
+            }
+            .map-card-label {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                padding: 10px 12px;
+                background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+                font-size: 11px;
+                letter-spacing: 4px;
+                color: #fff;
+                font-family: "Orbitron", monospace;
+            }
+            .map-card-sub {
+                font-size: 8px;
+                letter-spacing: 2px;
+                color: rgba(255, 255, 255, 0.35);
+                margin-top: 2px;
+                font-family: "Share Tech Mono", monospace;
+            }
+
+            /* ── LOADING ───────────────────────────────────────────── */
+            #loading-screen {
+                position: fixed;
+                inset: 0;
+                background: #000;
+                display: none;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                z-index: 190;
+                font-family: "Orbitron", monospace;
+            }
+            #load-map-name {
+                font-size: 32px;
+                font-weight: 700;
+                letter-spacing: 8px;
+                color: #fff;
+            }
+            #load-sub {
+                margin-top: 12px;
+                font-size: 10px;
+                letter-spacing: 5px;
+                color: rgba(255, 255, 255, 0.25);
+                font-family: "Share Tech Mono", monospace;
+            }
+            #load-bar-bg {
+                margin-top: 32px;
+                width: 280px;
+                height: 2px;
+                background: rgba(255, 255, 255, 0.1);
+            }
+            #load-bar {
+                height: 100%;
+                width: 0;
+                background: #fff;
+                box-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
+                transition: width 0.05s;
+            }
+
+            /* ── HUD ───────────────────────────────────────────────── */
             #hud {
                 position: fixed;
                 inset: 0;
@@ -47,8 +165,6 @@
                 backdrop-filter: blur(4px);
                 padding: 10px 14px;
             }
-
-            /* Top Bar */
             #topbar {
                 top: 0;
                 left: 0;
@@ -63,12 +179,12 @@
                 letter-spacing: 2px;
                 opacity: 0.8;
             }
-            #topbar span:nth-child(2) {
-                opacity: 0.4;
-                font-size: 10px;
+            #topbar .map-badge {
+                font-size: 9px;
+                letter-spacing: 3px;
+                opacity: 0.5;
+                text-transform: uppercase;
             }
-
-            /* Speed */
             #speed-box {
                 left: 22px;
                 top: 50%;
@@ -102,7 +218,6 @@
                 left: 0;
                 right: 0;
             }
-
             .tape-mark {
                 position: absolute;
                 right: 0;
@@ -127,8 +242,6 @@
                 box-shadow: 0 0 6px #39ffa0;
                 z-index: 10;
             }
-
-            /* Altitude */
             #alt-box {
                 right: 22px;
                 top: 50%;
@@ -162,16 +275,12 @@
                 left: 0;
                 right: 0;
             }
-
-            /* ADI — bottom center */
             #horizon-wrap {
                 position: absolute;
                 bottom: 85px;
                 left: 50%;
                 transform: translateX(-50%);
             }
-
-            /* Warnings */
             #stall {
                 position: absolute;
                 top: 72px;
@@ -195,6 +304,7 @@
                 text-shadow: 0 0 14px rgba(255, 224, 57, 0.8);
                 display: none;
                 animation: blink 0.7s infinite;
+                white-space: nowrap;
             }
             @keyframes blink {
                 0%,
@@ -205,8 +315,6 @@
                     opacity: 0;
                 }
             }
-
-            /* Compass */
             #compass-wrap {
                 position: absolute;
                 bottom: 22px;
@@ -247,8 +355,6 @@
                 margin-top: 4px;
                 opacity: 0.7;
             }
-
-            /* Throttle */
             #throttle-box {
                 bottom: 22px;
                 left: 22px;
@@ -279,8 +385,6 @@
                 font-size: 14px;
                 font-family: "Orbitron", monospace;
             }
-
-            /* Vario */
             #vario-box {
                 bottom: 22px;
                 right: 22px;
@@ -290,15 +394,13 @@
                 font-size: 18px;
                 font-family: "Orbitron", monospace;
             }
-
-            /* Controls help */
             #controls-help {
                 position: absolute;
                 top: 46px;
                 right: 22px;
                 font-size: 10px;
                 letter-spacing: 1px;
-                opacity: 0.35;
+                opacity: 0.3;
                 line-height: 2;
                 text-align: right;
             }
@@ -311,7 +413,7 @@
                 opacity: 0.5;
             }
 
-            /* Overlay screens */
+            /* ── OVERLAYS ─────────────────────────────────────────── */
             .overlay-screen {
                 position: fixed;
                 inset: 0;
@@ -321,17 +423,18 @@
                 justify-content: center;
                 font-family: "Orbitron", monospace;
                 pointer-events: all;
+                z-index: 100;
             }
             #crash-screen {
-                background: rgba(180, 0, 0, 0.25);
+                background: rgba(160, 0, 0, 0.28);
             }
             #landed-screen {
-                background: rgba(0, 80, 30, 0.25);
+                background: rgba(0, 80, 30, 0.28);
             }
-
             .overlay-screen h1 {
-                font-size: 64px;
+                font-size: clamp(36px, 7vw, 72px);
                 letter-spacing: 10px;
+                font-weight: 900;
             }
             #crash-screen h1 {
                 color: #ff4444;
@@ -366,107 +469,98 @@
                 font-family: "Share Tech Mono", monospace;
                 opacity: 0.8;
             }
+            .overlay-rating {
+                margin-top: 8px;
+                font-size: 20px;
+                letter-spacing: 6px;
+                font-family: "Orbitron", monospace;
+            }
             .overlay-stats {
                 margin-top: 12px;
                 font-size: 11px;
                 letter-spacing: 2px;
                 font-family: "Share Tech Mono", monospace;
                 line-height: 2;
-                opacity: 0.55;
+                opacity: 0.5;
+                text-align: center;
             }
             #crash-screen > p,
-            #crash-screen .overlay-stats {
+            #crash-screen .overlay-stats,
+            #crash-screen .overlay-rating {
                 color: #ffaaaa;
             }
             #landed-screen > p,
-            #landed-screen .overlay-stats {
+            #landed-screen .overlay-stats,
+            #landed-screen .overlay-rating {
                 color: #aaffcc;
             }
-            .restart-btn {
-                margin-top: 30px;
-                padding: 12px 40px;
+            .overlay-btns {
+                display: flex;
+                gap: 14px;
+                margin-top: 28px;
+            }
+            .ovl-btn {
+                padding: 11px 28px;
                 background: transparent;
                 font-family: "Orbitron", monospace;
-                font-size: 12px;
-                letter-spacing: 5px;
+                font-size: 11px;
+                letter-spacing: 4px;
                 cursor: pointer;
                 transition: all 0.2s;
+                border: 1px solid currentColor;
             }
-            #crash-screen .restart-btn {
-                border: 1px solid #ff4444;
+            #crash-screen .ovl-btn {
                 color: #ff4444;
             }
-            #crash-screen .restart-btn:hover {
+            #crash-screen .ovl-btn:hover {
                 background: rgba(255, 68, 68, 0.15);
-                box-shadow: 0 0 25px rgba(255, 68, 68, 0.4);
+                box-shadow: 0 0 20px rgba(255, 68, 68, 0.4);
             }
-            #landed-screen .restart-btn {
-                border: 1px solid #39ffa0;
+            #landed-screen .ovl-btn {
                 color: #39ffa0;
             }
-            #landed-screen .restart-btn:hover {
+            #landed-screen .ovl-btn:hover {
                 background: rgba(57, 255, 160, 0.1);
-                box-shadow: 0 0 25px rgba(57, 255, 160, 0.4);
+                box-shadow: 0 0 20px rgba(57, 255, 160, 0.4);
             }
 
-            /* Loading */
-            #loading-screen {
+            /* Snow particles canvas */
+            #snow-canvas {
                 position: fixed;
                 inset: 0;
-                background: #000;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                font-family: "Orbitron", monospace;
-                color: #39ffa0;
-                text-shadow: 0 0 10px rgba(57, 255, 160, 0.7);
-                z-index: 999;
-            }
-            #loading-screen h2 {
-                font-size: 32px;
-                letter-spacing: 8px;
-            }
-            #loading-screen p {
-                margin-top: 14px;
-                font-size: 10px;
-                letter-spacing: 4px;
-                opacity: 0.5;
-                font-family: "Share Tech Mono", monospace;
-            }
-            #load-bar-bg {
-                margin-top: 30px;
-                width: 300px;
-                height: 2px;
-                background: rgba(57, 255, 160, 0.15);
-            }
-            #load-bar {
-                height: 100%;
-                width: 0;
-                background: #39ffa0;
-                box-shadow: 0 0 10px #39ffa0;
+                pointer-events: none;
+                z-index: 5;
             }
         </style>
     </head>
     <body>
         <canvas id="c"></canvas>
+        <canvas id="snow-canvas" style="display: none"></canvas>
 
+        <!-- MAP SELECT -->
+        <div id="map-select">
+            <div id="map-title">CookedFS</div>
+            <div id="map-sub">SELECT YOUR MAP</div>
+            <div id="map-grid"></div>
+        </div>
+
+        <!-- LOADING -->
         <div id="loading-screen">
-            <h2>HORIZON</h2>
-            <p>GENERATING WORLD…</p>
+            <div id="load-map-name">CLASSIC</div>
+            <div id="load-sub">GENERATING WORLD…</div>
             <div id="load-bar-bg"><div id="load-bar"></div></div>
         </div>
 
-        <div id="hud">
+        <!-- HUD -->
+        <div id="hud" style="display: none">
             <div class="hud-box" id="topbar">
                 <span
-                    >HORIZON <span style="opacity: 0.3">|</span> FLIGHT
-                    SIMULATOR</span
-                >
+                    >CookedFS <span style="opacity: 0.25">|</span>
+                    <span class="map-badge" id="hud-map-name"></span
+                ></span>
                 <span id="coords">0.00°N &nbsp; 0.00°E</span>
                 <span id="elapsed">00:00</span>
             </div>
-
             <div class="hud-box" id="speed-box">
                 <div class="label">SPEED</div>
                 <div class="big" id="speed-val">0</div>
@@ -476,7 +570,6 @@
                 <div class="tape-center-line"></div>
                 <div id="speed-tape-inner"></div>
             </div>
-
             <div class="hud-box" id="alt-box">
                 <div class="label">ALTITUDE</div>
                 <div class="big" id="alt-val">0</div>
@@ -486,14 +579,11 @@
                 <div class="tape-center-line"></div>
                 <div id="alt-tape-inner"></div>
             </div>
-
             <div id="horizon-wrap">
                 <canvas id="adi" width="200" height="200"></canvas>
             </div>
-
             <div id="stall">⚠ STALL ⚠</div>
             <div id="runway-alert">▼ RUNWAY AHEAD ▼</div>
-
             <div id="compass-wrap">
                 <div class="label" style="text-align: center">HEADING</div>
                 <div id="compass-bar"><div id="compass-inner"></div></div>
@@ -502,7 +592,6 @@
                     <span id="hdg-card">N</span>
                 </div>
             </div>
-
             <div class="hud-box" id="throttle-box">
                 <div class="label">THROTTLE</div>
                 <div id="thr-bar-wrap">
@@ -510,13 +599,11 @@
                     <div id="thr-pct">0%</div>
                 </div>
             </div>
-
             <div class="hud-box" id="vario-box">
                 <div class="label">VERT SPEED</div>
                 <div class="big" id="vario-val">+0</div>
                 <div class="unit">FPM</div>
             </div>
-
             <div id="cam-badge">[ <span id="cam-name">CHASE CAM</span> ]</div>
             <div id="controls-help">
                 ↑ ↓ &nbsp; PITCH<br />← → &nbsp; ROLL<br />A / D &nbsp; YAW<br />W
@@ -524,57 +611,411 @@
             </div>
         </div>
 
+        <!-- CRASH -->
         <div id="crash-screen" class="overlay-screen">
             <h1>IMPACT</h1>
             <p>TERRAIN COLLISION DETECTED</p>
+            <div id="crash-rating" class="overlay-rating"></div>
             <div id="crash-stats" class="overlay-stats"></div>
-            <button class="restart-btn" onclick="restartGame()">
-                [ RESTART ]
-            </button>
+            <div class="overlay-btns">
+                <button class="ovl-btn" onclick="restartSameMap()">
+                    [ RETRY ]
+                </button>
+                <button class="ovl-btn" onclick="goMapSelect()">
+                    [ MAPS ]
+                </button>
+            </div>
         </div>
 
+        <!-- LANDED -->
         <div id="landed-screen" class="overlay-screen">
             <h1>LANDED</h1>
             <p>SUCCESSFUL TOUCHDOWN</p>
+            <div id="landed-rating" class="overlay-rating"></div>
             <div id="landed-stats" class="overlay-stats"></div>
-            <button class="restart-btn" onclick="restartGame()">
-                [ FLY AGAIN ]
-            </button>
+            <div class="overlay-btns">
+                <button class="ovl-btn" onclick="restartSameMap()">
+                    [ FLY AGAIN ]
+                </button>
+                <button class="ovl-btn" onclick="goMapSelect()">
+                    [ MAPS ]
+                </button>
+            </div>
         </div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
         <script>
             "use strict";
+            // ═══════════════════════════════════════════════════════
+            //  CookedFS
+            // ═══════════════════════════════════════════════════════
 
-            // ═══════════════════════════════════════════════════════════
-            //  HORIZON FLIGHT SIMULATOR
-            // ═══════════════════════════════════════════════════════════
+            // ── MAP DEFINITIONS ─────────────────────────────────────
+            const MAPS = [
+                {
+                    id: "classic",
+                    name: "CLASSIC",
+                    desc: "Perfect flying weather",
+                    accent: "#39ffa0",
+                    skyZen: 0x060e24,
+                    skyMid: 0x2e6fa8,
+                    skyHor: 0xbcd6e8,
+                    fogColor: 0x9fbbd4,
+                    fogDensity: 0.00012,
+                    ambientColor: 0xd0e8ff,
+                    ambientIntensity: 0.45,
+                    sunColor: 0xfff0d0,
+                    sunIntensity: 1.3,
+                    hemiSky: 0x7fb2d8,
+                    hemiGnd: 0x4d6e38,
+                    waterColor: 0x0f4a80,
+                    cloudColor: 0xf0f4ff,
+                    heightScale: 720,
+                    heightOff: -8,
+                    colorFn: (h) => {
+                        if (h < 0) return [0.12, 0.28, 0.52];
+                        if (h < 20) return [0.72, 0.65, 0.48];
+                        if (h < 100) return [0.26, 0.48, 0.2];
+                        if (h < 280) return [0.22, 0.4, 0.16];
+                        if (h < 420) return [0.4, 0.34, 0.24];
+                        if (h < 560) return [0.55, 0.5, 0.44];
+                        return [0.88, 0.91, 0.95];
+                    },
+                    snow: false,
+                    rain: false,
+                    nightLights: false,
+                    preview: "#1a5c2a",
+                },
+                {
+                    id: "night",
+                    name: "NIGHT",
+                    desc: "Fly by the stars",
+                    accent: "#8888ff",
+                    skyZen: 0x000005,
+                    skyMid: 0x050520,
+                    skyHor: 0x0a0a35,
+                    fogColor: 0x03030f,
+                    fogDensity: 0.00025,
+                    ambientColor: 0x101030,
+                    ambientIntensity: 0.15,
+                    sunColor: 0x3030aa,
+                    sunIntensity: 0.2,
+                    hemiSky: 0x080830,
+                    hemiGnd: 0x050518,
+                    waterColor: 0x050525,
+                    cloudColor: 0x111140,
+                    heightScale: 600,
+                    heightOff: -10,
+                    colorFn: (h) => {
+                        if (h < 0) return [0.02, 0.02, 0.08];
+                        if (h < 20) return [0.1, 0.1, 0.14];
+                        if (h < 200) return [0.07, 0.09, 0.07];
+                        if (h < 400) return [0.1, 0.09, 0.07];
+                        return [0.15, 0.15, 0.18];
+                    },
+                    snow: false,
+                    rain: false,
+                    nightLights: true,
+                    preview: "#05051a",
+                },
+                {
+                    id: "winter",
+                    name: "WINTER",
+                    desc: "Frozen world, icy runways",
+                    accent: "#aaeeff",
+                    skyZen: 0x0d1a2e,
+                    skyMid: 0x4a7a9b,
+                    skyHor: 0xbbd4e8,
+                    fogColor: 0xc8dce8,
+                    fogDensity: 0.00022,
+                    ambientColor: 0xd0e8ff,
+                    ambientIntensity: 0.55,
+                    sunColor: 0xeef8ff,
+                    sunIntensity: 0.9,
+                    hemiSky: 0xbbd8ee,
+                    hemiGnd: 0xaabbcc,
+                    waterColor: 0x1a3a5a,
+                    cloudColor: 0xeef4ff,
+                    heightScale: 640,
+                    heightOff: -6,
+                    colorFn: (h) => {
+                        if (h < 0) return [0.2, 0.35, 0.55];
+                        if (h < 30) return [0.82, 0.87, 0.92];
+                        if (h < 120) return [0.78, 0.84, 0.9];
+                        if (h < 320) return [0.72, 0.8, 0.88];
+                        return [0.94, 0.96, 0.99];
+                    },
+                    snow: true,
+                    rain: false,
+                    nightLights: false,
+                    preview: "#a8c8d8",
+                },
+                {
+                    id: "mountains",
+                    name: "MOUNTAINS",
+                    desc: "Extreme altitude terrain",
+                    accent: "#ffcc44",
+                    skyZen: 0x020a1a,
+                    skyMid: 0x0f3a6a,
+                    skyHor: 0x4a7aaa,
+                    fogColor: 0x6a90b0,
+                    fogDensity: 0.00008,
+                    ambientColor: 0xc8d8f0,
+                    ambientIntensity: 0.5,
+                    sunColor: 0xffffff,
+                    sunIntensity: 1.5,
+                    hemiSky: 0x5a88bb,
+                    hemiGnd: 0x3a2a18,
+                    waterColor: 0x0a3060,
+                    cloudColor: 0xffffff,
+                    heightScale: 1600,
+                    heightOff: -30,
+                    colorFn: (h) => {
+                        if (h < 0) return [0.1, 0.22, 0.45];
+                        if (h < 50) return [0.5, 0.42, 0.3];
+                        if (h < 200) return [0.32, 0.28, 0.2];
+                        if (h < 500) return [0.45, 0.38, 0.28];
+                        if (h < 900) return [0.55, 0.5, 0.44];
+                        if (h < 1200) return [0.7, 0.68, 0.65];
+                        return [0.94, 0.96, 0.99];
+                    },
+                    snow: false,
+                    rain: false,
+                    nightLights: false,
+                    preview: "#3a4a5a",
+                },
+                {
+                    id: "desert",
+                    name: "DESERT",
+                    desc: "Scorched earth, no mercy",
+                    accent: "#ffaa33",
+                    skyZen: 0x1a0a00,
+                    skyMid: 0x8a4a10,
+                    skyHor: 0xf0a060,
+                    fogColor: 0xd8a878,
+                    fogDensity: 0.00014,
+                    ambientColor: 0xffd090,
+                    ambientIntensity: 0.6,
+                    sunColor: 0xffcc60,
+                    sunIntensity: 1.8,
+                    hemiSky: 0xe0902a,
+                    hemiGnd: 0x8a5010,
+                    waterColor: 0x3a6888,
+                    cloudColor: 0xffe8c0,
+                    heightScale: 500,
+                    heightOff: -12,
+                    colorFn: (h) => {
+                        if (h < 0) return [0.25, 0.45, 0.55];
+                        if (h < 20) return [0.82, 0.7, 0.42];
+                        if (h < 150) return [0.75, 0.6, 0.32];
+                        if (h < 300) return [0.65, 0.5, 0.28];
+                        if (h < 420) return [0.6, 0.46, 0.24];
+                        return [0.72, 0.64, 0.5];
+                    },
+                    snow: false,
+                    rain: false,
+                    nightLights: false,
+                    preview: "#c88840",
+                },
+                {
+                    id: "storm",
+                    name: "STORM",
+                    desc: "Zero visibility, godspeed",
+                    accent: "#88aacc",
+                    skyZen: 0x080c10,
+                    skyMid: 0x182028,
+                    skyHor: 0x303840,
+                    fogColor: 0x202830,
+                    fogDensity: 0.0006,
+                    ambientColor: 0x8090a0,
+                    ambientIntensity: 0.3,
+                    sunColor: 0x607080,
+                    sunIntensity: 0.4,
+                    hemiSky: 0x404858,
+                    hemiGnd: 0x282e2a,
+                    waterColor: 0x0a1820,
+                    cloudColor: 0x303840,
+                    heightScale: 660,
+                    heightOff: -8,
+                    colorFn: (h) => {
+                        if (h < 0) return [0.06, 0.12, 0.2];
+                        if (h < 30) return [0.3, 0.32, 0.28];
+                        if (h < 200) return [0.2, 0.25, 0.18];
+                        if (h < 400) return [0.28, 0.26, 0.22];
+                        return [0.42, 0.42, 0.44];
+                    },
+                    snow: false,
+                    rain: true,
+                    nightLights: false,
+                    preview: "#1c2028",
+                },
+            ];
 
-            let scene, camera, renderer, planeMesh, waterMesh;
-            let cameraMode = 0;
-            let crashed = false,
-                landed = false;
-            let startTime = Date.now();
+            // ── Draw preview thumbnails ──────────────────────────────
+            function drawMapPreview(canvas, map) {
+                const W = canvas.width,
+                    H = canvas.height;
+                const ctx = canvas.getContext("2d");
 
-            // Plane state
-            const SPAWN_POS = new THREE.Vector3(0, 420, -800);
-            const S = {
-                pos: SPAWN_POS.clone(),
-                vel: new THREE.Vector3(0, 0, 80),
-                pitch: 0,
-                roll: 0,
-                yaw: 0,
-                airspeed: 80,
-                throttle: 0.45,
-                prevY: 420,
-            };
-            const STALL_SPEED = 38;
+                // Sky gradient
+                const skyG = ctx.createLinearGradient(0, 0, 0, H * 0.65);
+                skyG.addColorStop(
+                    0,
+                    "#" + map.skyZen.toString(16).padStart(6, "0"),
+                );
+                skyG.addColorStop(
+                    0.5,
+                    "#" + map.skyMid.toString(16).padStart(6, "0"),
+                );
+                skyG.addColorStop(
+                    1,
+                    "#" + map.skyHor.toString(16).padStart(6, "0"),
+                );
+                ctx.fillStyle = skyG;
+                ctx.fillRect(0, 0, W, H);
 
-            // Runway
-            const RWY_CX = 0,
-                RWY_CZ = 0,
-                RWY_W = 24,
-                RWY_L = 520;
+                // Sun
+                if (map.id !== "night" && map.id !== "storm") {
+                    const sg = ctx.createRadialGradient(
+                        W * 0.75,
+                        H * 0.25,
+                        0,
+                        W * 0.75,
+                        H * 0.25,
+                        W * 0.18,
+                    );
+                    sg.addColorStop(0, "rgba(255,240,180,0.9)");
+                    sg.addColorStop(1, "transparent");
+                    ctx.fillStyle = sg;
+                    ctx.fillRect(0, 0, W, H);
+                }
+                if (map.id === "night") {
+                    for (let i = 0; i < 30; i++) {
+                        ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.6 + 0.2})`;
+                        ctx.beginPath();
+                        ctx.arc(
+                            Math.random() * W,
+                            Math.random() * H * 0.55,
+                            Math.random() * 0.8 + 0.3,
+                            0,
+                            Math.PI * 2,
+                        );
+                        ctx.fill();
+                    }
+                }
+
+                // Terrain silhouette
+                const [tr, tg, tb] = map.colorFn(
+                    map.id === "mountains" ? 600 : 150,
+                );
+                const tG = ctx.createLinearGradient(0, H * 0.55, 0, H);
+                tG.addColorStop(
+                    0,
+                    `rgb(${(tr * 255) | 0},${(tg * 255) | 0},${(tb * 255) | 0})`,
+                );
+                const [br, bg, bb] = map.colorFn(0);
+                tG.addColorStop(
+                    1,
+                    `rgb(${(br * 255) | 0},${(bg * 255) | 0},${(bb * 255) | 0})`,
+                );
+                ctx.fillStyle = tG;
+
+                ctx.beginPath();
+                ctx.moveTo(0, H);
+                const pts = 12;
+                const seed = map.id.charCodeAt(0) * 7;
+                for (let i = 0; i <= pts; i++) {
+                    const x = (i / pts) * W;
+                    const n =
+                        Math.sin(i * 1.3 + seed) * 0.12 +
+                        Math.sin(i * 2.8 + seed * 2) * 0.07;
+                    const y =
+                        H * (map.id === "mountains" ? 0.38 : 0.55) +
+                        n * H * (map.id === "mountains" ? 0.3 : 0.15);
+                    ctx.lineTo(x, y);
+                }
+                ctx.lineTo(W, H);
+                ctx.closePath();
+                ctx.fill();
+
+                // Water strip
+                const [wr, wg, wb] = [
+                    (map.waterColor >> 16) / 255,
+                    ((map.waterColor >> 8) & 0xff) / 255,
+                    (map.waterColor & 0xff) / 255,
+                ];
+                ctx.fillStyle = `rgba(${(wr * 255) | 0},${(wg * 255) | 0},${(wb * 255) | 0},0.7)`;
+                ctx.fillRect(0, H * 0.88, W, H * 0.12);
+
+                // Snow overlay
+                if (map.snow) {
+                    ctx.fillStyle = "rgba(255,255,255,0.15)";
+                    ctx.fillRect(0, 0, W, H);
+                    for (let i = 0; i < 18; i++) {
+                        ctx.fillStyle = "rgba(255,255,255,0.5)";
+                        ctx.beginPath();
+                        ctx.arc(
+                            Math.random() * W,
+                            Math.random() * H,
+                            1,
+                            0,
+                            Math.PI * 2,
+                        );
+                        ctx.fill();
+                    }
+                }
+                if (map.rain) {
+                    ctx.strokeStyle = "rgba(150,180,200,0.25)";
+                    ctx.lineWidth = 0.5;
+                    for (let i = 0; i < 20; i++) {
+                        const x = Math.random() * W;
+                        ctx.beginPath();
+                        ctx.moveTo(x, Math.random() * H);
+                        ctx.lineTo(x + 2, Math.random() * H);
+                        ctx.stroke();
+                    }
+                }
+                if (map.nightLights) {
+                    for (let i = 0; i < 12; i++) {
+                        ctx.fillStyle = `rgba(255,230,100,0.7)`;
+                        ctx.beginPath();
+                        ctx.arc(
+                            Math.random() * W,
+                            H * 0.6 + Math.random() * H * 0.3,
+                            1,
+                            0,
+                            Math.PI * 2,
+                        );
+                        ctx.fill();
+                    }
+                }
+            }
+
+            function buildMapSelect() {
+                const grid = document.getElementById("map-grid");
+                for (const map of MAPS) {
+                    const card = document.createElement("div");
+                    card.className = "map-card";
+                    const cv = document.createElement("canvas");
+                    cv.width = 320;
+                    cv.height = 180;
+                    card.appendChild(cv);
+                    const lbl = document.createElement("div");
+                    lbl.className = "map-card-label";
+                    lbl.innerHTML = `${map.name}<div class="map-card-sub">${map.desc}</div>`;
+                    card.appendChild(lbl);
+                    card.style.setProperty("--accent", map.accent);
+                    card.addEventListener("mouseenter", () => {
+                        lbl.style.color = map.accent;
+                    });
+                    card.addEventListener("mouseleave", () => {
+                        lbl.style.color = "#fff";
+                    });
+                    card.addEventListener("click", () => startMap(map));
+                    grid.appendChild(card);
+                    drawMapPreview(cv, map);
+                }
+            }
 
             // ── Noise ────────────────────────────────────────────────
             function hash2(x, z) {
@@ -611,15 +1052,24 @@
                 }
                 return v / mx;
             }
-            function terrainH(wx, wz) {
-                // Flatten runway area smoothly
+
+            const RWY_CX = 0,
+                RWY_CZ = 0,
+                RWY_W = 24,
+                RWY_L = 520;
+            let ACTIVE_MAP = null;
+
+            function terrainH(wx, wz, mapCfg) {
+                const cfg = mapCfg || ACTIVE_MAP;
                 const dx = Math.max(0, Math.abs(wx - RWY_CX) - RWY_W);
                 const dz = Math.max(0, Math.abs(wz - RWY_CZ) - RWY_L * 0.5);
                 const rDist = Math.sqrt(dx * dx + dz * dz);
-                const flat = Math.max(0, 1 - rDist / 140);
-
+                const flat = Math.max(0, 1 - rDist / 160);
                 const n = fbm(wx, wz);
-                const h = Math.pow(Math.max(0, n - 0.15) / 0.85, 1.6) * 720 - 8;
+                const h =
+                    Math.pow(Math.max(0, n - 0.15) / 0.85, 1.6) *
+                        cfg.heightScale +
+                    cfg.heightOff;
                 return lerp(h, 1.5, flat);
             }
 
@@ -628,9 +1078,7 @@
                 CHUNK_SEGS = 40,
                 CHUNK_RADIUS = 3;
             const chunks = new Map();
-            const terrMat = new THREE.MeshLambertMaterial({
-                vertexColors: true,
-            });
+            let terrMat = null;
             let lastCX = 1e9,
                 lastCZ = 1e9;
 
@@ -651,39 +1099,22 @@
                         wz = pos.getZ(i) + oz;
                     const h = terrainH(wx, wz);
                     pos.setY(i, h);
-                    let r, g, b;
-                    if (h < 0) {
-                        r = 0.12;
-                        g = 0.28;
-                        b = 0.52;
-                    } else if (h < 20) {
-                        r = 0.72;
-                        g = 0.65;
-                        b = 0.48;
-                    } else if (h < 100) {
-                        r = 0.26;
-                        g = 0.48;
-                        b = 0.2;
-                    } else if (h < 280) {
-                        r = 0.22;
-                        g = 0.4;
-                        b = 0.16;
-                    } else if (h < 420) {
-                        r = 0.4;
-                        g = 0.34;
-                        b = 0.24;
-                    } else if (h < 560) {
-                        r = 0.55;
-                        g = 0.5;
-                        b = 0.44;
+                    const [r, g, b] = ACTIVE_MAP.colorFn(h);
+                    // Night: sprinkle city lights on low terrain
+                    if (
+                        ACTIVE_MAP.nightLights &&
+                        h > 2 &&
+                        h < 80 &&
+                        Math.random() < 0.003
+                    ) {
+                        col[i * 3] = 1;
+                        col[i * 3 + 1] = 0.9;
+                        col[i * 3 + 2] = 0.3;
                     } else {
-                        r = 0.88;
-                        g = 0.91;
-                        b = 0.95;
+                        col[i * 3] = r;
+                        col[i * 3 + 1] = g;
+                        col[i * 3 + 2] = b;
                     }
-                    col[i * 3] = r;
-                    col[i * 3 + 1] = g;
-                    col[i * 3 + 2] = b;
                 }
                 geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
                 geo.computeVertexNormals();
@@ -718,8 +1149,60 @@
                 }
             }
 
-            // ── Scene setup ───────────────────────────────────────────
-            function init() {
+            // ── THREE scene globals ──────────────────────────────────
+            let scene,
+                camera,
+                renderer,
+                planeMesh,
+                waterMesh,
+                skyMesh,
+                sunLight,
+                ambLight,
+                hemiLight;
+            let cameraMode = 0,
+                crashed = false,
+                landed = false,
+                startTime = Date.now();
+
+            const SPAWN_POS = new THREE.Vector3(0, 420, -800);
+            const S = {
+                pos: SPAWN_POS.clone(),
+                vel: new THREE.Vector3(0, 0, 80),
+                pitch: 0,
+                roll: 0,
+                yaw: 0,
+                airspeed: 80,
+                throttle: 0.45,
+                prevY: 420,
+            };
+            const STALL_SPEED = 38;
+            const keys = {};
+
+            // ── Start selected map ───────────────────────────────────
+            function startMap(map) {
+                ACTIVE_MAP = map;
+                crashed = false;
+                landed = false;
+                document.getElementById("crash-screen").style.display = "none";
+                document.getElementById("landed-screen").style.display = "none";
+                document.getElementById("map-select").style.display = "none";
+                const ls = document.getElementById("loading-screen");
+                ls.style.display = "flex";
+                document.getElementById("load-map-name").textContent = map.name;
+                document.getElementById("load-map-name").style.color =
+                    map.accent;
+                document.getElementById("load-bar").style.background =
+                    map.accent;
+                document.getElementById("load-bar").style.boxShadow =
+                    `0 0 12px ${map.accent}`;
+
+                if (!renderer) initRenderer();
+                else clearScene();
+
+                buildSceneForMap(map);
+            }
+
+            function initRenderer() {
                 renderer = new THREE.WebGLRenderer({
                     canvas: document.getElementById("c"),
                     antialias: true,
@@ -730,56 +1213,12 @@
                 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
                 renderer.toneMapping = THREE.ACESFilmicToneMapping;
                 renderer.toneMappingExposure = 0.9;
-
-                scene = new THREE.Scene();
-                scene.fog = new THREE.FogExp2(0x9fbbd4, 0.00012);
                 camera = new THREE.PerspectiveCamera(
                     72,
                     innerWidth / innerHeight,
                     0.5,
-                    20000,
+                    22000,
                 );
-
-                buildSky();
-                buildLights();
-                buildWater();
-                buildClouds();
-                buildAircraft();
-                buildRunway();
-
-                // Generate initial chunks with progress bar
-                const total = (CHUNK_RADIUS * 2 + 1) ** 2;
-                let done = 0;
-                const pcx = Math.round(S.pos.x / CHUNK_SIZE);
-                const pcz = Math.round(S.pos.z / CHUNK_SIZE);
-                const bar = document.getElementById("load-bar");
-
-                function genNext(dx, dz) {
-                    if (dx > CHUNK_RADIUS) {
-                        document.getElementById(
-                            "loading-screen",
-                        ).style.display = "none";
-                        lastCX = pcx;
-                        lastCZ = pcz;
-                        startTime = Date.now();
-                        loop();
-                        return;
-                    }
-                    const key = `${pcx + dx},${pcz + dz}`;
-                    if (!chunks.has(key))
-                        chunks.set(key, buildChunk(pcx + dx, pcz + dz));
-                    done++;
-                    bar.style.width = (done / total) * 100 + "%";
-                    let ndx = dx,
-                        ndz = dz + 1;
-                    if (ndz > CHUNK_RADIUS) {
-                        ndz = -CHUNK_RADIUS;
-                        ndx++;
-                    }
-                    setTimeout(() => genNext(ndx, ndz), 0);
-                }
-                genNext(-CHUNK_RADIUS, -CHUNK_RADIUS);
-
                 window.addEventListener("keydown", (e) => {
                     keys[e.code] = true;
                     if (
@@ -799,6 +1238,7 @@
                         cameraMode = (cameraMode + 1) % 2;
                         updateCamBadge();
                     }
+                    if (e.code === "Escape") goMapSelect();
                 });
                 window.addEventListener("resize", () => {
                     camera.aspect = innerWidth / innerHeight;
@@ -807,51 +1247,168 @@
                 });
             }
 
-            function buildSky() {
+            function clearScene() {
+                if (!scene) return;
+                for (const [, mesh] of chunks) {
+                    scene.remove(mesh);
+                    mesh.geometry.dispose();
+                }
+                chunks.clear();
+                lastCX = 1e9;
+                lastCZ = 1e9;
+                while (scene.children.length) scene.remove(scene.children[0]);
+            }
+
+            function buildSceneForMap(map) {
+                scene = new THREE.Scene();
+                scene.fog = new THREE.FogExp2(map.fogColor, map.fogDensity);
+
+                terrMat = new THREE.MeshLambertMaterial({ vertexColors: true });
+
+                buildSky(map);
+                buildLights(map);
+                buildWater(map);
+                buildClouds(map);
+                buildAircraft();
+                buildRunway(map);
+
+                // Particle effects
+                const snowCv = document.getElementById("snow-canvas");
+                snowCv.style.display = map.snow || map.rain ? "block" : "none";
+                if (map.snow || map.rain) initParticles(map);
+
+                // Generate initial chunks with loading bar
+                const total = (CHUNK_RADIUS * 2 + 1) ** 2;
+                let done = 0;
+                const pcx = Math.round(S.pos.x / CHUNK_SIZE);
+                const pcz = Math.round(S.pos.z / CHUNK_SIZE);
+                const bar = document.getElementById("load-bar");
+
+                function genNext(dx, dz) {
+                    if (dx > CHUNK_RADIUS) {
+                        // Done loading
+                        document.getElementById(
+                            "loading-screen",
+                        ).style.display = "none";
+                        document.getElementById("hud").style.display = "block";
+                        document.getElementById("hud-map-name").textContent =
+                            map.name;
+                        updateHUDColors(map);
+                        lastCX = pcx;
+                        lastCZ = pcz;
+                        crashed = false;
+                        landed = false;
+                        S.pos.copy(SPAWN_POS);
+                        S.vel.set(0, 0, 80);
+                        S.pitch = 0;
+                        S.roll = 0;
+                        S.yaw = 0;
+                        S.airspeed = 80;
+                        S.throttle = 0.45;
+                        S.prevY = SPAWN_POS.y;
+                        startTime = Date.now();
+                        camLP.copy(camera.position);
+                        loop();
+                        return;
+                    }
+                    const key = `${pcx + dx},${pcz + dz}`;
+                    if (!chunks.has(key))
+                        chunks.set(key, buildChunk(pcx + dx, pcz + dz));
+                    done++;
+                    bar.style.width = (done / total) * 100 + "%";
+                    let ndx = dx,
+                        ndz = dz + 1;
+                    if (ndz > CHUNK_RADIUS) {
+                        ndz = -CHUNK_RADIUS;
+                        ndx++;
+                    }
+                    setTimeout(() => genNext(ndx, ndz), 0);
+                }
+                genNext(-CHUNK_RADIUS, -CHUNK_RADIUS);
+            }
+
+            function buildSky(map) {
                 const mat = new THREE.ShaderMaterial({
                     uniforms: {
-                        uZen: { value: new THREE.Color(0x060e24) },
-                        uMid: { value: new THREE.Color(0x2e6fa8) },
-                        uHor: { value: new THREE.Color(0xbcd6e8) },
+                        uZen: { value: new THREE.Color(map.skyZen) },
+                        uMid: { value: new THREE.Color(map.skyMid) },
+                        uHor: { value: new THREE.Color(map.skyHor) },
                     },
                     vertexShader: `varying vec3 vWP;void main(){vWP=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
                     fragmentShader: `uniform vec3 uZen,uMid,uHor;varying vec3 vWP;void main(){float t=normalize(vWP).y*.5+.5;vec3 c=t>.5?mix(uMid,uZen,(t-.5)*2.):mix(uHor,uMid,t*2.);gl_FragColor=vec4(c,1.);}`,
                     side: THREE.BackSide,
                     depthWrite: false,
                 });
-                scene.add(
-                    new THREE.Mesh(
-                        new THREE.SphereGeometry(15000, 32, 16),
-                        mat,
-                    ),
+                skyMesh = new THREE.Mesh(
+                    new THREE.SphereGeometry(18000, 32, 16),
+                    mat,
                 );
+                scene.add(skyMesh);
+
+                // Stars for night/storm
+                if (map.id === "night") {
+                    const sg = new THREE.BufferGeometry();
+                    const sv = [];
+                    for (let i = 0; i < 3000; i++) {
+                        const theta = Math.random() * Math.PI * 2,
+                            phi = Math.acos(2 * Math.random() - 1);
+                        sv.push(
+                            Math.sin(phi) * Math.cos(theta) * 14000,
+                            Math.sin(phi) * Math.sin(theta) * 14000,
+                            Math.cos(phi) * 14000,
+                        );
+                    }
+                    sg.setAttribute(
+                        "position",
+                        new THREE.Float32BufferAttribute(sv, 3),
+                    );
+                    const starMesh = new THREE.Points(
+                        sg,
+                        new THREE.PointsMaterial({
+                            color: 0xffffff,
+                            size: 1.8,
+                            sizeAttenuation: false,
+                        }),
+                    );
+                    scene.add(starMesh);
+                }
             }
 
-            function buildLights() {
-                scene.add(new THREE.AmbientLight(0xd0e8ff, 0.45));
-                const sun = new THREE.DirectionalLight(0xfff0d0, 1.3);
-                sun.position.set(3000, 4000, -1500);
-                sun.castShadow = true;
-                const sc = sun.shadow.camera;
+            function buildLights(map) {
+                ambLight = new THREE.AmbientLight(
+                    map.ambientColor,
+                    map.ambientIntensity,
+                );
+                scene.add(ambLight);
+                sunLight = new THREE.DirectionalLight(
+                    map.sunColor,
+                    map.sunIntensity,
+                );
+                sunLight.position.set(3000, 4000, -1500);
+                sunLight.castShadow = true;
+                const sc = sunLight.shadow.camera;
                 sc.near = 1;
                 sc.far = 10000;
-                sc.left = -3500;
-                sc.right = 3500;
-                sc.top = 3500;
-                sc.bottom = -3500;
-                sun.shadow.mapSize.set(2048, 2048);
-                sun.shadow.bias = -0.0003;
-                scene.add(sun);
-                scene.add(new THREE.HemisphereLight(0x7fb2d8, 0x4d6e38, 0.55));
+                sc.left = sc.bottom = -3500;
+                sc.right = sc.top = 3500;
+                sunLight.shadow.mapSize.set(2048, 2048);
+                sunLight.shadow.bias = -0.0003;
+                scene.add(sunLight);
+                hemiLight = new THREE.HemisphereLight(
+                    map.hemiSky,
+                    map.hemiGnd,
+                    0.55,
+                );
+                scene.add(hemiLight);
             }
 
-            function buildWater() {
+            function buildWater(map) {
                 const geo = new THREE.PlaneGeometry(80000, 80000, 1, 1);
                 geo.rotateX(-Math.PI / 2);
                 waterMesh = new THREE.Mesh(
                     geo,
                     new THREE.MeshLambertMaterial({
-                        color: 0x0f4a80,
+                        color: map.waterColor,
                         transparent: true,
                         opacity: 0.82,
                     }),
@@ -860,53 +1417,57 @@
                 scene.add(waterMesh);
             }
 
-            function buildClouds() {
+            function buildClouds(map) {
                 const mat = new THREE.MeshLambertMaterial({
-                    color: 0xf0f4ff,
+                    color: map.cloudColor,
                     transparent: true,
-                    opacity: 0.88,
+                    opacity: map.id === "storm" ? 0.95 : 0.88,
                 });
-                for (let c = 0; c < 80; c++) {
+                const count = map.id === "storm" ? 140 : 80;
+                for (let c = 0; c < count; c++) {
                     const g = new THREE.Group();
-                    const n = 4 + Math.floor(Math.random() * 5);
+                    const n = 4 + Math.floor(Math.random() * 6);
                     for (let k = 0; k < n; k++) {
-                        const r = 35 + Math.random() * 65;
+                        const r = 40 + Math.random() * 80;
                         const m = new THREE.Mesh(
                             new THREE.SphereGeometry(r, 7, 5),
                             mat,
                         );
                         m.position.set(
-                            (Math.random() - 0.5) * 200,
-                            (Math.random() - 0.5) * 35,
-                            (Math.random() - 0.5) * 120,
+                            (Math.random() - 0.5) * 250,
+                            (Math.random() - 0.5) * 40,
+                            (Math.random() - 0.5) * 160,
                         );
                         g.add(m);
                     }
+                    const altitude =
+                        map.id === "storm"
+                            ? 180 + Math.random() * 400
+                            : 450 + Math.random() * 900;
                     g.position.set(
                         (Math.random() - 0.5) * 14000,
-                        450 + Math.random() * 900,
+                        altitude,
                         (Math.random() - 0.5) * 14000,
                     );
                     scene.add(g);
                 }
             }
 
-            function buildRunway() {
-                const rh = terrainH(RWY_CX, RWY_CZ) + 0.6;
+            function buildRunway(map) {
+                const rh = terrainH(RWY_CX, RWY_CZ, map) + 0.6;
                 const g = new THREE.Group();
-
-                function addMesh(geo, mat, px, py, pz) {
+                const addM = (geo, mat, px, py, pz) => {
                     const m = new THREE.Mesh(geo, mat);
                     m.position.set(px, py, pz);
                     g.add(m);
-                }
+                };
 
-                // Asphalt
-                const asphGeo = new THREE.PlaneGeometry(RWY_W * 2, RWY_L);
-                asphGeo.rotateX(-Math.PI / 2);
-                addMesh(
-                    asphGeo,
-                    new THREE.MeshLambertMaterial({ color: 0x252525 }),
+                const rwyColor = map.id === "winter" ? 0x888888 : 0x252525;
+                const asph = new THREE.PlaneGeometry(RWY_W * 2, RWY_L);
+                asph.rotateX(-Math.PI / 2);
+                addM(
+                    asph,
+                    new THREE.MeshLambertMaterial({ color: rwyColor }),
                     RWY_CX,
                     rh,
                     RWY_CZ,
@@ -915,19 +1476,16 @@
                 const wMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
                 const gMat = new THREE.MeshLambertMaterial({ color: 0xdddddd });
 
-                // Centerline dashes
                 for (let i = -12; i <= 12; i++) {
                     const dg = new THREE.PlaneGeometry(1.8, 20);
                     dg.rotateX(-Math.PI / 2);
-                    addMesh(dg, gMat, RWY_CX, rh + 0.1, RWY_CZ + i * 36);
+                    addM(dg, gMat, RWY_CX, rh + 0.1, RWY_CZ + i * 36);
                 }
-
-                // Threshold stripes at each end
                 for (const s of [-1, 1]) {
                     for (let i = 0; i < 6; i++) {
                         const sg = new THREE.PlaneGeometry(3.5, 28);
                         sg.rotateX(-Math.PI / 2);
-                        addMesh(
+                        addM(
                             sg,
                             wMat,
                             RWY_CX + (i - 2.5) * 6.5,
@@ -935,15 +1493,11 @@
                             RWY_CZ + s * (RWY_L * 0.5 - 40),
                         );
                     }
-                }
-
-                // Touchdown zone marks
-                for (const s of [-1, 1]) {
                     for (let k = 1; k <= 3; k++) {
                         for (const side of [-1, 1]) {
                             const tg = new THREE.PlaneGeometry(5, 16);
                             tg.rotateX(-Math.PI / 2);
-                            addMesh(
+                            addM(
                                 tg,
                                 wMat,
                                 RWY_CX + side * 8,
@@ -954,9 +1508,14 @@
                     }
                 }
 
-                // Approach lights
-                const glMat = new THREE.MeshBasicMaterial({ color: 0x00ff44 });
-                const rlMat = new THREE.MeshBasicMaterial({ color: 0xff2200 });
+                // Approach lights - brighter for night
+                const brightness = map.id === "night" ? 3 : 1;
+                const glMat = new THREE.MeshBasicMaterial({
+                    color: new THREE.Color(0, brightness, 0),
+                });
+                const rlMat = new THREE.MeshBasicMaterial({
+                    color: new THREE.Color(brightness * 0.8, 0, 0),
+                });
                 for (let i = -2; i <= 2; i++) {
                     for (const s of [-1, 1]) {
                         const m = new THREE.Mesh(
@@ -969,24 +1528,17 @@
                             RWY_CZ + s * (RWY_L * 0.5 + 12),
                         );
                         g.add(m);
+                        if (map.id === "night") {
+                            const glow = new THREE.PointLight(
+                                s === -1 ? 0x00ff00 : 0xff0000,
+                                0.4,
+                                60,
+                            );
+                            glow.position.copy(m.position);
+                            g.add(glow);
+                        }
                     }
                 }
-
-                // Runway number "27" / "09" painted markers (simplified rectangles)
-                for (const s of [-1, 1]) {
-                    for (let d = 0; d < 2; d++) {
-                        const ng = new THREE.PlaneGeometry(4, 7);
-                        ng.rotateX(-Math.PI / 2);
-                        addMesh(
-                            ng,
-                            wMat,
-                            RWY_CX + (d - 0.5) * 9,
-                            rh + 0.1,
-                            RWY_CZ + s * (RWY_L * 0.5 - 90),
-                        );
-                    }
-                }
-
                 scene.add(g);
             }
 
@@ -1091,8 +1643,76 @@
                 scene.add(planeMesh);
             }
 
+            // ── Particle effects (snow / rain) ───────────────────────
+            let particleCtx = null,
+                particles = [];
+            function initParticles(map) {
+                const cv = document.getElementById("snow-canvas");
+                cv.width = innerWidth;
+                cv.height = innerHeight;
+                particleCtx = cv.getContext("2d");
+                particles = [];
+                const count = map.rain ? 600 : 300;
+                for (let i = 0; i < count; i++) {
+                    particles.push({
+                        x: Math.random() * innerWidth,
+                        y: Math.random() * innerHeight,
+                        vx: (Math.random() - 0.5) * (map.rain ? 3 : 1),
+                        vy: map.rain
+                            ? 8 + Math.random() * 6
+                            : 1 + Math.random() * 2,
+                        r: map.rain ? 0.6 : Math.random() * 1.5 + 0.5,
+                        a: map.rain
+                            ? 0.3 + Math.random() * 0.4
+                            : 0.5 + Math.random() * 0.5,
+                    });
+                }
+            }
+            function tickParticles(map) {
+                if (!particleCtx) return;
+                particleCtx.clearRect(0, 0, innerWidth, innerHeight);
+                if (map.rain)
+                    particleCtx.strokeStyle = "rgba(150,180,210,0.35)";
+                for (const p of particles) {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    if (p.y > innerHeight) {
+                        p.y = 0;
+                        p.x = Math.random() * innerWidth;
+                    }
+                    if (p.x < 0) p.x = innerWidth;
+                    if (p.x > innerWidth) p.x = 0;
+                    if (map.rain) {
+                        particleCtx.beginPath();
+                        particleCtx.moveTo(p.x, p.y);
+                        particleCtx.lineTo(p.x + p.vx * 2, p.y + p.vy * 2);
+                        particleCtx.stroke();
+                    } else {
+                        particleCtx.beginPath();
+                        particleCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                        particleCtx.fillStyle = `rgba(220,230,255,${p.a})`;
+                        particleCtx.fill();
+                    }
+                }
+            }
+
+            // ── HUD color theme ──────────────────────────────────────
+            function updateHUDColors(map) {
+                const ac = map.accent;
+                const r = parseInt(ac.slice(1, 3), 16),
+                    g = parseInt(ac.slice(3, 5), 16),
+                    b = parseInt(ac.slice(5, 7), 16);
+                const root = document.getElementById("hud");
+                root.style.color = ac;
+                root.style.textShadow = `0 0 8px rgba(${r},${g},${b},0.7)`;
+                // tape glow
+                document.querySelectorAll(".tape-center-line").forEach((el) => {
+                    el.style.background = ac;
+                    el.style.boxShadow = `0 0 6px ${ac}`;
+                });
+            }
+
             // ── Physics ───────────────────────────────────────────────
-            const keys = {};
             const _qY = new THREE.Quaternion(),
                 _qP = new THREE.Quaternion(),
                 _qR = new THREE.Quaternion();
@@ -1108,11 +1728,25 @@
                 return _qY.clone().multiply(_qP).multiply(_qR);
             }
 
+            // Very generous — you basically just have to be near the runway and not diving straight in
             function isOnRunway(x, z) {
                 return (
-                    Math.abs(x - RWY_CX) < RWY_W + 5 &&
-                    Math.abs(z - RWY_CZ) < RWY_L * 0.5 + 15
+                    Math.abs(x - RWY_CX) < RWY_W * 2.5 + 10 &&
+                    Math.abs(z - RWY_CZ) < RWY_L * 0.5 + 40
                 );
+            }
+
+            function landingRating(sinkRate, spd, roll) {
+                const spdKts = Math.round(spd * 1.944);
+                const sinkFpm = Math.abs(sinkRate) * 196.85;
+                const rollDeg = Math.abs(roll) * 57.3;
+                if (sinkFpm < 200 && spdKts < 120 && rollDeg < 5)
+                    return "★★★  PERFECT";
+                if (sinkFpm < 500 && spdKts < 200 && rollDeg < 12)
+                    return "★★☆  SMOOTH";
+                if (sinkFpm < 900 && spdKts < 280 && rollDeg < 25)
+                    return "★☆☆  ROUGH";
+                return "☆☆☆  BARELY MADE IT";
             }
 
             function updatePhysics(dt) {
@@ -1156,22 +1790,24 @@
                 S.pos.addScaledVector(S.vel, dt);
 
                 const gh = terrainH(S.pos.x, S.pos.z);
+
                 if (S.pos.y <= gh + 7) {
                     const spd = S.vel.length();
                     if (isOnRunway(S.pos.x, S.pos.z)) {
-                        // Landing: gentle sink, wings level, manageable speed
-                        if (
-                            S.vel.y > -14 &&
-                            Math.abs(S.roll) < 0.28 &&
-                            spd < 135
-                        ) {
-                            triggerLanding(spd);
+                        // Only crash on runway if literally nose-diving or fully inverted
+                        const noseDown = S.vel.y < -55; // ~11000 fpm — catastrophic dive
+                        const inverted = Math.abs(S.roll) > 2.35; // >135° roll — upside down
+                        if (noseDown || inverted) {
+                            triggerCrash(
+                                spd,
+                                "INVERTED OR NOSE-DIVE ON RUNWAY",
+                            );
                         } else {
-                            triggerCrash(spd);
+                            triggerLanding(S.vel.y, spd, S.roll);
                         }
                         return;
                     } else if (spd > 20) {
-                        triggerCrash(spd);
+                        triggerCrash(spd, "TERRAIN COLLISION");
                         return;
                     }
                     S.pos.y = gh + 7;
@@ -1190,8 +1826,8 @@
                 const agl = S.pos.y - gh;
                 document.getElementById("runway-alert").style.display =
                     !stalled &&
-                    rwyDist < 2200 &&
-                    agl < 250 &&
+                    rwyDist < 2500 &&
+                    agl < 300 &&
                     !isOnRunway(S.pos.x, S.pos.z)
                         ? "block"
                         : "none";
@@ -1200,6 +1836,7 @@
             }
 
             function updateCamera() {
+                if (!planeMesh || !scene) return;
                 const q = buildQ();
                 if (cameraMode === 0) {
                     const off = new THREE.Vector3(0, 11, 60).applyQuaternion(q);
@@ -1230,10 +1867,10 @@
                 }
             }
 
-            // ── HUD ───────────────────────────────────────────────────
+            // ── HUD draw ─────────────────────────────────────────────
             function drawADI() {
-                const cv = document.getElementById("adi");
-                const ctx = cv.getContext("2d");
+                const cv = document.getElementById("adi"),
+                    ctx = cv.getContext("2d");
                 const W = cv.width,
                     H = cv.height,
                     cx = W / 2,
@@ -1279,10 +1916,11 @@
                     ctx.fillText(Math.abs(deg), -tw - 12, y + 3);
                 }
                 ctx.restore();
-                ctx.strokeStyle = "#39ffa0";
+                const ac = ACTIVE_MAP ? ACTIVE_MAP.accent : "#39ffa0";
+                ctx.strokeStyle = ac;
                 ctx.lineWidth = 2.5;
                 ctx.shadowBlur = 7;
-                ctx.shadowColor = "#39ffa0";
+                ctx.shadowColor = ac;
                 ctx.beginPath();
                 ctx.moveTo(cx - 58, cy);
                 ctx.lineTo(cx - 22, cy);
@@ -1294,7 +1932,7 @@
                 ctx.lineTo(cx, cy + 7);
                 ctx.stroke();
                 ctx.shadowBlur = 0;
-                ctx.strokeStyle = "rgba(57,255,160,0.35)";
+                ctx.strokeStyle = `${ac}60`;
                 ctx.lineWidth = 1.5;
                 ctx.beginPath();
                 ctx.arc(cx, cy, R, 0, Math.PI * 2);
@@ -1307,7 +1945,7 @@
                     ctx.save();
                     ctx.rotate((deg * Math.PI) / 180 - S.roll);
                     const len = deg % 30 === 0 ? 10 : deg % 10 === 0 ? 6 : 4;
-                    ctx.strokeStyle = `rgba(57,255,160,${deg === 0 ? 0.9 : 0.5})`;
+                    ctx.strokeStyle = `rgba(57,255,160,${deg === 0 ? 0.9 : 0.4})`;
                     ctx.lineWidth = deg === 0 ? 2 : 1;
                     ctx.beginPath();
                     ctx.moveTo(0, -R + 1);
@@ -1315,8 +1953,8 @@
                     ctx.stroke();
                     ctx.restore();
                 }
-                ctx.strokeStyle = "#39ffa0";
-                ctx.fillStyle = "#39ffa0";
+                ctx.strokeStyle = ac;
+                ctx.fillStyle = ac;
                 ctx.lineWidth = 1.5;
                 ctx.beginPath();
                 ctx.moveTo(-5, -R + 12);
@@ -1328,8 +1966,8 @@
             }
 
             function updateTapes() {
-                const spd = Math.round(S.vel.length() * 1.944);
-                const alt = Math.round(S.pos.y * 3.281);
+                const spd = Math.round(S.vel.length() * 1.944),
+                    alt = Math.round(S.pos.y * 3.281);
                 document.getElementById("speed-val").textContent = spd;
                 document.getElementById("alt-val").textContent = alt;
                 const TAPE_PX = 14,
@@ -1391,8 +2029,8 @@
                             : a % 10 === 0
                               ? Math.round(a)
                               : "·";
-                    const b = a % 30 === 0 ? "font-weight:bold;" : "";
-                    html += `<span style="${b}display:inline-block;min-width:12.5px;text-align:center">${lbl}</span>`;
+                    const bold = a % 30 === 0 ? "font-weight:bold;" : "";
+                    html += `<span style="${bold}display:inline-block;min-width:12.5px;text-align:center">${lbl}</span>`;
                 }
                 document.getElementById("compass-inner").innerHTML = html;
                 document.getElementById("hdg-deg").textContent = String(
@@ -1403,6 +2041,7 @@
             }
 
             function updateHUD() {
+                if (!ACTIVE_MAP) return;
                 drawADI();
                 updateTapes();
                 updateCompass();
@@ -1414,7 +2053,11 @@
                 const vs = document.getElementById("vario-val");
                 vs.textContent = (vspd >= 0 ? "+" : "") + vspd;
                 vs.style.color =
-                    vspd < -200 ? "#ff5555" : vspd > 0 ? "#39ffa0" : "#fff";
+                    vspd < -200
+                        ? "#ff5555"
+                        : vspd > 0
+                          ? ACTIVE_MAP.accent
+                          : "#fff";
                 document.getElementById("coords").textContent =
                     `${(S.pos.z / 1000).toFixed(2)}°N &nbsp; ${(S.pos.x / 1000).toFixed(2)}°E`;
                 const t = Math.floor((Date.now() - startTime) / 1000);
@@ -1422,6 +2065,8 @@
                     String(Math.floor(t / 60)).padStart(2, "0") +
                     ":" +
                     String(t % 60).padStart(2, "0");
+                if (ACTIVE_MAP.snow || ACTIVE_MAP.rain)
+                    tickParticles(ACTIVE_MAP);
             }
 
             function updateCamBadge() {
@@ -1430,7 +2075,6 @@
                     "COCKPIT CAM",
                 ][cameraMode];
             }
-
             function fmt(t) {
                 return (
                     String(Math.floor(t / 60)).padStart(2, "0") +
@@ -1439,27 +2083,30 @@
                 );
             }
 
-            function triggerCrash(spd) {
+            function triggerCrash(spd, reason = "TERRAIN COLLISION") {
                 crashed = true;
                 const ft = Math.floor((Date.now() - startTime) / 1000);
                 document.getElementById("crash-stats").innerHTML =
-                    `AIRSPEED AT IMPACT: ${Math.round(spd * 1.944)} KTS<br>FLIGHT TIME: ${fmt(ft)}<br>POSITION: ${(S.pos.z / 1000).toFixed(2)}°N &nbsp; ${(S.pos.x / 1000).toFixed(2)}°E`;
+                    `${reason}<br>AIRSPEED: ${Math.round(spd * 1.944)} KTS &nbsp; TIME: ${fmt(ft)}<br>POS: ${(S.pos.z / 1000).toFixed(2)}°N &nbsp; ${(S.pos.x / 1000).toFixed(2)}°E`;
+                document.getElementById("crash-rating").textContent = "";
                 document.getElementById("crash-screen").style.display = "flex";
             }
 
-            function triggerLanding(spd) {
+            function triggerLanding(sinkY, spd, roll) {
                 landed = true;
                 const ft = Math.floor((Date.now() - startTime) / 1000);
                 const dist = Math.hypot(
                     S.pos.x - SPAWN_POS.x,
                     S.pos.z - SPAWN_POS.z,
                 );
+                const rating = landingRating(sinkY, spd, roll);
+                document.getElementById("landed-rating").textContent = rating;
                 document.getElementById("landed-stats").innerHTML =
-                    `TOUCHDOWN SPEED: ${Math.round(spd * 1.944)} KTS<br>FLIGHT TIME: ${fmt(ft)}<br>DISTANCE FLOWN: ${(dist / 1000).toFixed(1)} KM`;
+                    `TOUCHDOWN: ${Math.round(spd * 1.944)} KTS &nbsp; TIME: ${fmt(ft)}<br>DISTANCE FLOWN: ${(dist / 1000).toFixed(1)} KM &nbsp; MAP: ${ACTIVE_MAP.name}`;
                 document.getElementById("landed-screen").style.display = "flex";
             }
 
-            function restartGame() {
+            function restartSameMap() {
                 crashed = false;
                 landed = false;
                 document.getElementById("crash-screen").style.display = "none";
@@ -1476,18 +2123,37 @@
                 updateChunks(true);
             }
 
-            let lastT = 0;
+            function goMapSelect() {
+                crashed = false;
+                landed = false;
+                document.getElementById("crash-screen").style.display = "none";
+                document.getElementById("landed-screen").style.display = "none";
+                document.getElementById("hud").style.display = "none";
+                document.getElementById("map-select").style.display = "flex";
+                // Stop loop by clearing ACTIVE_MAP temporarily
+                ACTIVE_MAP = null;
+                const sc = document.getElementById("snow-canvas");
+                sc.style.display = "none";
+                if (particleCtx)
+                    particleCtx.clearRect(0, 0, innerWidth, innerHeight);
+            }
+
+            // ── Main loop ─────────────────────────────────────────────
+            let lastT = 0,
+                loopRunning = false;
             function loop(ts = 0) {
+                if (!ACTIVE_MAP) return; // stop when back at map select
                 requestAnimationFrame(loop);
                 const dt = Math.min((ts - lastT) / 1000, 0.05);
                 lastT = ts;
                 if (!crashed && !landed) updatePhysics(dt);
                 updateCamera();
                 updateHUD();
-                renderer.render(scene, camera);
+                if (renderer && scene && camera) renderer.render(scene, camera);
             }
 
-            init();
+            // ── Boot ─────────────────────────────────────────────────
+            buildMapSelect();
         </script>
     </body>
 </html>
