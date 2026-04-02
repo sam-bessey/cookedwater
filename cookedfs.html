@@ -55,9 +55,9 @@
             }
             #map-grid {
                 display: grid;
-                grid-template-columns: repeat(3, 1fr);
+                grid-template-columns: repeat(4, 1fr);
                 gap: 16px;
-                max-width: 920px;
+                max-width: 1200px;
                 width: 100%;
             }
             .map-card {
@@ -849,6 +849,77 @@
                     nightLights: false,
                     preview: "#1c2028",
                 },
+                {
+                    id: "city",
+                    name: "CITY",
+                    desc: "Navigate urban canyons",
+                    accent: "#ffff88",
+                    skyZen: 0x0a0810,
+                    skyMid: 0x2a3a5a,
+                    skyHor: 0x7a8a9a,
+                    fogColor: 0x6a7a8a,
+                    fogDensity: 0.0003,
+                    ambientColor: 0xa0b0c0,
+                    ambientIntensity: 0.5,
+                    sunColor: 0xf0f0d0,
+                    sunIntensity: 1.0,
+                    hemiSky: 0x6a8aaa,
+                    hemiGnd: 0x4a5a6a,
+                    waterColor: 0x1a3a5a,
+                    cloudColor: 0xe8e8e0,
+                    heightScale: 1200,
+                    heightOff: -15,
+                    colorFn: (h) => {
+                        if (h < 0) return [0.2, 0.25, 0.3];
+                        if (h < 5) return [0.35, 0.35, 0.35];
+                        if (h < 50) return [0.4, 0.4, 0.45];
+                        if (h < 100) return [0.45, 0.45, 0.5];
+                        if (h < 200) return [0.5, 0.5, 0.55];
+                        if (h < 400) return [0.55, 0.55, 0.6];
+                        if (h < 700) return [0.65, 0.65, 0.7];
+                        if (h < 1000) return [0.7, 0.72, 0.75];
+                        return [0.82, 0.84, 0.88];
+                    },
+                    snow: false,
+                    rain: false,
+                    nightLights: false,
+                    preview: "#4a5a6a",
+                },
+                {
+                    id: "autumn",
+                    name: "AUTUMN",
+                    desc: "Fall foliage, bare branches",
+                    accent: "#ff9944",
+                    skyZen: 0x1a1008,
+                    skyMid: 0x4a3a1a,
+                    skyHor: 0xaa8a5a,
+                    fogColor: 0x9a7a5a,
+                    fogDensity: 0.00018,
+                    ambientColor: 0xd0a878,
+                    ambientIntensity: 0.5,
+                    sunColor: 0xffcc88,
+                    sunIntensity: 1.2,
+                    hemiSky: 0xaa7a4a,
+                    hemiGnd: 0x6a4a2a,
+                    waterColor: 0x1a4a6a,
+                    cloudColor: 0xf0d8c0,
+                    heightScale: 750,
+                    heightOff: -10,
+                    colorFn: (h) => {
+                        if (h < 0) return [0.15, 0.25, 0.35];
+                        if (h < 15) return [0.3, 0.5, 0.2];
+                        if (h < 80) return [0.35, 0.55, 0.2];
+                        if (h < 150) return [0.85, 0.4, 0.15];
+                        if (h < 200) return [0.9, 0.45, 0.1];
+                        if (h < 280) return [0.75, 0.35, 0.15];
+                        if (h < 400) return [0.6, 0.3, 0.2];
+                        return [0.85, 0.8, 0.75];
+                    },
+                    snow: false,
+                    rain: false,
+                    nightLights: false,
+                    preview: "#8a4a2a",
+                },
             ];
 
             // ── Draw preview thumbnails ──────────────────────────────
@@ -1175,6 +1246,7 @@
                 airspeed: 80,
                 throttle: 0.45,
                 prevY: 420,
+                prevRoll: 0,
             };
             const STALL_SPEED = 38;
             const keys = {};
@@ -1194,6 +1266,7 @@
                 S.airspeed = 80;
                 S.throttle = 0.45;
                 S.prevY = SPAWN_POS.y;
+                S.prevRoll = 0;
                 document.getElementById("crash-screen").style.display = "none";
                 document.getElementById("landed-screen").style.display = "none";
                 document.getElementById("map-select").style.display = "none";
@@ -1287,7 +1360,7 @@
                 buildWater(map);
                 buildClouds(map);
                 buildAircraft();
-                buildRunway(map);
+                if (map.id !== "city") buildRunway(map);
 
                 // Particle effects
                 const snowCv = document.getElementById("snow-canvas");
@@ -1324,6 +1397,7 @@
                         S.airspeed = 80;
                         S.throttle = 0.45;
                         S.prevY = SPAWN_POS.y;
+                        S.prevRoll = 0;
                         startTime = Date.now();
                         camLP.copy(SPAWN_POS);
                         loop();
@@ -1784,7 +1858,9 @@
                 if (keys["KeyS"])
                     S.throttle = Math.max(0, S.throttle - 0.55 * dt);
 
-                S.yaw -= S.roll * 0.38 * dt;
+                const rollRate = (S.roll - S.prevRoll) / dt;
+                S.yaw -= Math.sin(S.roll) * rollRate * 0.12 * dt;
+                S.prevRoll = S.roll;
                 S.pitch = Math.max(
                     -Math.PI * 0.48,
                     Math.min(Math.PI * 0.48, S.pitch),
@@ -2138,7 +2214,7 @@
                 S.airspeed = 80;
                 S.throttle = 0.45;
                 S.prevY = SPAWN_POS.y;
-                startTime = Date.now();
+                S.prevRoll = 0;
                 updateChunks(true);
             }
 
