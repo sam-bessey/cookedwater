@@ -1211,6 +1211,13 @@
                 else clearScene();
 
                 buildSceneForMap(map);
+
+                // Reset map to fix glitch
+                setTimeout(()=>{
+                    restartSameMap();
+                    console.log("HI")
+
+                }, 200)
             }
 
             function initRenderer() {
