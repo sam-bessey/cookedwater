@@ -542,6 +542,60 @@
             <div id="map-title">CookedFS</div>
             <div id="map-sub">SELECT YOUR MAP</div>
             <div id="map-grid"></div>
+            <div
+                id="mouse-toggle-wrap"
+                style="
+                    margin-top: 32px;
+                    display: flex;
+                    align-items: center;
+                    gap: 14px;
+                    cursor: pointer;
+                    user-select: none;
+                "
+                onclick="toggleMouseControls()"
+            >
+                <div
+                    id="mouse-toggle-track"
+                    style="
+                        width: 44px;
+                        height: 24px;
+                        border-radius: 12px;
+                        border: 1px solid rgba(255, 255, 255, 0.25);
+                        background: rgba(255, 255, 255, 0.08);
+                        position: relative;
+                        transition:
+                            background 0.2s,
+                            border-color 0.2s;
+                    "
+                >
+                    <div
+                        id="mouse-toggle-thumb"
+                        style="
+                            width: 18px;
+                            height: 18px;
+                            border-radius: 50%;
+                            background: #fff;
+                            position: absolute;
+                            top: 2px;
+                            left: 3px;
+                            transition:
+                                left 0.2s,
+                                background 0.2s;
+                            opacity: 0.35;
+                        "
+                    ></div>
+                </div>
+                <span
+                    style="
+                        font-size: 10px;
+                        letter-spacing: 4px;
+                        color: rgba(255, 255, 255, 0.4);
+                        font-family: &quot;Orbitron&quot;, monospace;
+                    "
+                    id="mouse-toggle-label"
+                    >MOUSE CONTROLS &nbsp;OFF</span
+                >
+            </div>
         </div>
 
         <!-- LOADING -->
@@ -607,7 +661,12 @@
             <div id="cam-badge">[ <span id="cam-name">CHASE CAM</span> ]</div>
             <div id="controls-help">
                 ↑ ↓ &nbsp; PITCH<br />← → &nbsp; ROLL<br />A / D &nbsp; YAW<br />W
-                / S &nbsp; THROTTLE<br />V &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CAMERA
+                / S &nbsp; THROTTLE<br />V &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                CAMERA<br /><span
+                    id="mouse-ctrl-hint"
+                    style="color: rgba(57, 255, 160, 0.6); display: none"
+                    >🖱 MOUSE &nbsp;ON</span
+                >
             </div>
         </div>
 
@@ -1062,6 +1121,32 @@
                 }
             }
 
+            function toggleMouseControls() {
+                mouseControlsEnabled = !mouseControlsEnabled;
+                mouseNX = 0;
+                mouseNY = 0;
+                const track = document.getElementById("mouse-toggle-track");
+                const thumb = document.getElementById("mouse-toggle-thumb");
+                const label = document.getElementById("mouse-toggle-label");
+                if (mouseControlsEnabled) {
+                    track.style.background = "rgba(57,255,160,0.28)";
+                    track.style.borderColor = "rgba(57,255,160,0.7)";
+                    thumb.style.left = "23px";
+                    thumb.style.opacity = "1";
+                    thumb.style.background = "#39ffa0";
+                    label.style.color = "#39ffa0";
+                    label.textContent = "MOUSE CONTROLS  ON";
+                } else {
+                    track.style.background = "rgba(255,255,255,0.08)";
+                    track.style.borderColor = "rgba(255,255,255,0.25)";
+                    thumb.style.left = "3px";
+                    thumb.style.opacity = "0.35";
+                    thumb.style.background = "#fff";
+                    label.style.color = "rgba(255,255,255,0.4)";
+                    label.textContent = "MOUSE CONTROLS  OFF";
+                }
+            }
+
             function buildMapSelect() {
                 const grid = document.getElementById("map-grid");
                 for (const map of MAPS) {
@@ -1129,10 +1214,10 @@
                 const gx = Math.floor(wx / gridSize);
                 const gz = Math.floor(wz / gridSize);
                 const seed = hash2(gx, gz);
-                
+
                 const buildingDensity = 0.65;
                 if (seed > buildingDensity) return 0;
-                
+
                 const buildingHeight = Math.pow(seed, 0.5) * 600 + 80;
                 const cx = (gx + 0.5) * gridSize;
                 const cz = (gz + 0.5) * gridSize;
@@ -1140,14 +1225,15 @@
                 const lengthVar = hash2(gx * 2 + 1, gz * 2 + 1);
                 const bw = gridSize * 0.35 + widthVar * gridSize * 0.1;
                 const bl = gridSize * 0.35 + lengthVar * gridSize * 0.1;
-                
+
                 const dx = Math.abs(wx - cx);
                 const dz = Math.abs(wz - cz);
-                
+
                 if (dx < bw && dz < bl) {
-                    const edgeFade = Math.max(0, Math.min(1, 
-                        Math.min((bw - dx) / 8, (bl - dz) / 8)
-                    ));
+                    const edgeFade = Math.max(
+                        0,
+                        Math.min(1, Math.min((bw - dx) / 8, (bl - dz) / 8)),
+                    );
                     return buildingHeight * edgeFade;
                 }
                 return 0;
@@ -1158,24 +1244,27 @@
                 const gx = Math.floor(wx / gridSize);
                 const gz = Math.floor(wz / gridSize);
                 const seed = hash2(gx, gz);
-                
+
                 const treeDensity = 0.5;
                 if (seed > treeDensity) return 0;
-                
+
                 const treeHeight = Math.pow(seed, 0.6) * 250 + 40;
                 const cx = (gx + 0.5) * gridSize;
                 const cz = (gz + 0.5) * gridSize;
-                
+
                 const dx = wx - cx;
                 const dz = wz - cz;
                 const distFromCenter = Math.sqrt(dx * dx + dz * dz);
                 const trunkRadius = 4;
-                
+
                 if (distFromCenter < trunkRadius * 3) {
                     if (distFromCenter < trunkRadius) {
                         return treeHeight * 0.3;
                     }
-                    const falloff = Math.max(0, 1 - (distFromCenter - trunkRadius) / (trunkRadius * 2));
+                    const falloff = Math.max(
+                        0,
+                        1 - (distFromCenter - trunkRadius) / (trunkRadius * 2),
+                    );
                     return treeHeight * falloff;
                 }
                 return 0;
@@ -1199,13 +1288,13 @@
                         cfg.heightScale +
                     cfg.heightOff;
                 h = lerp(h, 1.5, flat);
-                
+
                 if (cfg.id === "city") {
                     h += generateBuilding(wx, wz);
                 } else if (cfg.id === "autumn") {
                     h += generateTrees(wx, wz);
                 }
-                
+
                 return h;
             }
 
@@ -1314,6 +1403,16 @@
             };
             const STALL_SPEED = 38;
             const keys = {};
+
+            // ── Mouse controls ───────────────────────────────────────
+            let mouseControlsEnabled = false;
+            let mouseNX = 0,
+                mouseNY = 0;
+            window.addEventListener("mousemove", (e) => {
+                if (!mouseControlsEnabled || !ACTIVE_MAP) return;
+                mouseNX = (e.clientX - innerWidth / 2) / (innerWidth / 2);
+                mouseNY = (e.clientY - innerHeight / 2) / (innerHeight / 2);
+            });
 
             // ── Start selected map ───────────────────────────────────
             function startMap(map) {
@@ -1446,6 +1545,11 @@
                         document.getElementById("hud").style.display = "block";
                         document.getElementById("hud-map-name").textContent =
                             map.name;
+                        document.getElementById(
+                            "mouse-ctrl-hint",
+                        ).style.display = mouseControlsEnabled
+                            ? "inline"
+                            : "none";
                         updateHUDColors(map);
                         lastCX = pcx;
                         lastCZ = pcz;
@@ -1913,6 +2017,16 @@
                 if (keys["ArrowDown"]) S.pitch += PR * dt;
                 if (keys["ArrowLeft"]) S.roll -= RR * dt;
                 if (keys["ArrowRight"]) S.roll += RR * dt;
+
+                // Mouse controls (additive with keys, deadzone 0.04)
+                if (mouseControlsEnabled) {
+                    const DEAD = 0.04,
+                        SENS = 1.6;
+                    const mx = Math.abs(mouseNX) > DEAD ? mouseNX : 0;
+                    const my = Math.abs(mouseNY) > DEAD ? mouseNY : 0;
+                    S.pitch += my * PR * SENS * dt; // mouse up   → pitch up
+                    S.roll += mx * RR * SENS * dt; // mouse right → roll right
+                }
                 if (keys["KeyA"]) S.yaw += YR * dt;
                 if (keys["KeyD"]) S.yaw -= YR * dt;
                 if (keys["KeyW"])
@@ -2280,6 +2394,8 @@
             function goMapSelect() {
                 crashed = false;
                 landed = false;
+                mouseNX = 0;
+                mouseNY = 0;
                 document.getElementById("crash-screen").style.display = "none";
                 document.getElementById("landed-screen").style.display = "none";
                 document.getElementById("hud").style.display = "none";
