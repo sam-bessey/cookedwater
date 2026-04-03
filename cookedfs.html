@@ -1124,6 +1124,63 @@
                 return v / mx;
             }
 
+            function generateBuilding(wx, wz) {
+                const gridSize = 120;
+                const gx = Math.floor(wx / gridSize);
+                const gz = Math.floor(wz / gridSize);
+                const seed = hash2(gx, gz);
+                
+                const buildingDensity = 0.65;
+                if (seed > buildingDensity) return 0;
+                
+                const buildingHeight = Math.pow(seed, 0.5) * 600 + 80;
+                const cx = (gx + 0.5) * gridSize;
+                const cz = (gz + 0.5) * gridSize;
+                const widthVar = hash2(gx * 2, gz * 2);
+                const lengthVar = hash2(gx * 2 + 1, gz * 2 + 1);
+                const bw = gridSize * 0.35 + widthVar * gridSize * 0.1;
+                const bl = gridSize * 0.35 + lengthVar * gridSize * 0.1;
+                
+                const dx = Math.abs(wx - cx);
+                const dz = Math.abs(wz - cz);
+                
+                if (dx < bw && dz < bl) {
+                    const edgeFade = Math.max(0, Math.min(1, 
+                        Math.min((bw - dx) / 8, (bl - dz) / 8)
+                    ));
+                    return buildingHeight * edgeFade;
+                }
+                return 0;
+            }
+
+            function generateTrees(wx, wz) {
+                const gridSize = 80;
+                const gx = Math.floor(wx / gridSize);
+                const gz = Math.floor(wz / gridSize);
+                const seed = hash2(gx, gz);
+                
+                const treeDensity = 0.5;
+                if (seed > treeDensity) return 0;
+                
+                const treeHeight = Math.pow(seed, 0.6) * 250 + 40;
+                const cx = (gx + 0.5) * gridSize;
+                const cz = (gz + 0.5) * gridSize;
+                
+                const dx = wx - cx;
+                const dz = wz - cz;
+                const distFromCenter = Math.sqrt(dx * dx + dz * dz);
+                const trunkRadius = 4;
+                
+                if (distFromCenter < trunkRadius * 3) {
+                    if (distFromCenter < trunkRadius) {
+                        return treeHeight * 0.3;
+                    }
+                    const falloff = Math.max(0, 1 - (distFromCenter - trunkRadius) / (trunkRadius * 2));
+                    return treeHeight * falloff;
+                }
+                return 0;
+            }
+
             const RWY_CX = 0,
                 RWY_CZ = 0,
                 RWY_W = 24,
@@ -1137,11 +1194,19 @@
                 const rDist = Math.sqrt(dx * dx + dz * dz);
                 const flat = Math.max(0, 1 - rDist / 160);
                 const n = fbm(wx, wz);
-                const h =
+                let h =
                     Math.pow(Math.max(0, n - 0.15) / 0.85, 1.6) *
                         cfg.heightScale +
                     cfg.heightOff;
-                return lerp(h, 1.5, flat);
+                h = lerp(h, 1.5, flat);
+                
+                if (cfg.id === "city") {
+                    h += generateBuilding(wx, wz);
+                } else if (cfg.id === "autumn") {
+                    h += generateTrees(wx, wz);
+                }
+                
+                return h;
             }
 
             // ── Chunk system ─────────────────────────────────────────
@@ -1246,7 +1311,6 @@
                 airspeed: 80,
                 throttle: 0.45,
                 prevY: 420,
-                prevRoll: 0,
             };
             const STALL_SPEED = 38;
             const keys = {};
@@ -1266,7 +1330,6 @@
                 S.airspeed = 80;
                 S.throttle = 0.45;
                 S.prevY = SPAWN_POS.y;
-                S.prevRoll = 0;
                 document.getElementById("crash-screen").style.display = "none";
                 document.getElementById("landed-screen").style.display = "none";
                 document.getElementById("map-select").style.display = "none";
@@ -1397,7 +1460,6 @@
                         S.airspeed = 80;
                         S.throttle = 0.45;
                         S.prevY = SPAWN_POS.y;
-                        S.prevRoll = 0;
                         startTime = Date.now();
                         camLP.copy(SPAWN_POS);
                         loop();
@@ -1858,9 +1920,7 @@
                 if (keys["KeyS"])
                     S.throttle = Math.max(0, S.throttle - 0.55 * dt);
 
-                const rollRate = (S.roll - S.prevRoll) / dt;
-                S.yaw -= Math.sin(S.roll) * rollRate * 0.12 * dt;
-                S.prevRoll = S.roll;
+                S.yaw -= S.roll * 0.38 * dt;
                 S.pitch = Math.max(
                     -Math.PI * 0.48,
                     Math.min(Math.PI * 0.48, S.pitch),
@@ -2214,7 +2274,6 @@
                 S.airspeed = 80;
                 S.throttle = 0.45;
                 S.prevY = SPAWN_POS.y;
-                S.prevRoll = 0;
                 updateChunks(true);
             }
 
