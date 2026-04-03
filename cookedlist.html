@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>CookedList: A tier list maker</title>
+        <style>
+            :root {
+                --bg-color: #1a1a1b;
+                --tier-label-width: 100px;
+                --row-min-height: 80px;
+            }
+
+            body {
+                font-family: "Segoe UI", sans-serif;
+                background-color: var(--bg-color);
+                color: white;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 20px;
+            }
+
+            .controls {
+                margin-bottom: 30px;
+                display: flex;
+                gap: 10px;
+            }
+
+            input {
+                padding: 10px;
+                border-radius: 4px;
+                border: none;
+                width: 200px;
+            }
+
+            button {
+                padding: 10px 15px;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-weight: bold;
+                color: white;
+            }
+
+            #add-btn {
+                background-color: #4caf50;
+            }
+            #reset-btn {
+                background-color: #ff9800;
+            }
+
+            .tier-container {
+                width: 100%;
+                max-width: 800px;
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+                background-color: #333;
+                border: 2px solid #333;
+            }
+
+            .tier-row {
+                display: flex;
+                background-color: #1a1a1b;
+                min-height: var(--row-min-height);
+            }
+
+            .tier-label {
+                width: var(--tier-label-width);
+                min-width: var(--tier-label-width);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+                font-size: 2rem;
+                color: #000;
+            }
+
+            .item-dropzone {
+                flex-grow: 1;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                padding: 10px;
+            }
+
+            /* Colors */
+            .tier-s {
+                background-color: #ff7fff;
+            }
+            .tier-a {
+                background-color: #ff7f7f;
+            }
+            .tier-b {
+                background-color: #ffbf7f;
+            }
+            .tier-c {
+                background-color: #ffff7f;
+            }
+            .tier-d {
+                background-color: #7fff7f;
+            }
+            .tier-f {
+                background-color: #7fbfff;
+            }
+            .tier-start {
+                background-color: #3e3e42;
+                color: #fff !important;
+                font-size: 1.2rem;
+            }
+
+            /* Items */
+            .item {
+                background-color: #444;
+                padding: 10px 15px;
+                cursor: grab;
+                border-radius: 4px;
+                position: relative; /* Crucial for absolute positioning of the delete btn */
+                border: 1px solid #666;
+                height: fit-content;
+            }
+
+            /* --- THE FIX --- */
+            .delete-btn {
+                position: absolute;
+                top: -6px; /* Adjust slightly up */
+                right: -6px; /* Adjust slightly right */
+                background: #ff4444; /* Standard red */
+                color: white;
+                border: none;
+                cursor: pointer;
+                display: none; /* Hidden by default */
+
+                /* Perfect Circle Fix */
+                width: 18px; /* Defined square dimensions */
+                height: 18px;
+                border-radius: 50%; /* Pure circle */
+
+                /* Center the '×' Perfectly */
+                display: flex;
+                align-items: center;
+                justify-content: center;
+
+                /* Font and visual adjustments */
+                font-size: 12px;
+                line-height: 1; /* Key for centering single characters */
+                padding: 0;
+                margin: 0;
+                box-shadow: 0 0 4px rgba(0, 0, 0, 0.5); /* Optional: add subtle shadow for visibility */
+            }
+
+            .item:hover .delete-btn {
+                display: flex; /* Change display to flex on hover, not block */
+            }
+            /* --- END OF FIX --- */
+
+            .drag-over {
+                background-color: #252526 !important;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>CookedList: A Tier list maker</h1>
+
+        <div class="controls">
+            <input
+                type="text"
+                id="item-input"
+                placeholder="Add something..."
+                maxlength="25"
+            />
+            <button id="add-btn">Add</button>
+            <button id="reset-btn">Reset to Start</button>
+        </div>
+
+        <div class="tier-container">
+            <div class="tier-row">
+                <div class="tier-label tier-s">S</div>
+                <div class="item-dropzone"></div>
+            </div>
+            <div class="tier-row">
+                <div class="tier-label tier-a">A</div>
+                <div class="item-dropzone"></div>
+            </div>
+            <div class="tier-row">
+                <div class="tier-label tier-b">B</div>
+                <div class="item-dropzone"></div>
+            </div>
+            <div class="tier-row">
+                <div class="tier-label tier-c">C</div>
+                <div class="item-dropzone"></div>
+            </div>
+            <div class="tier-row">
+                <div class="tier-label tier-d">D</div>
+                <div class="item-dropzone"></div>
+            </div>
+            <div class="tier-row">
+                <div class="tier-label tier-f">F</div>
+                <div class="item-dropzone"></div>
+            </div>
+
+            <div class="tier-row">
+                <div class="tier-label tier-start">Start</div>
+                <div id="starting-tier" class="item-dropzone"></div>
+            </div>
+        </div>
+
+        <script>
+            const input = document.getElementById("item-input");
+            const startTier = document.getElementById("starting-tier");
+
+            function addItem() {
+                const text = input.value.trim();
+                if (!text) return;
+
+                const item = document.createElement("div");
+                item.className = "item";
+                item.draggable = true;
+                item.id = "id-" + Date.now();
+                item.innerText = text;
+
+                const del = document.createElement("button");
+                del.className = "delete-btn";
+                del.innerHTML =
+                    "&times;"; /* HTML entity for proper multiplication symbol 'x' */
+                del.onclick = () => item.remove();
+
+                item.appendChild(del);
+                item.ondragstart = (e) =>
+                    e.dataTransfer.setData("text", e.target.id);
+
+                startTier.appendChild(item);
+                input.value = "";
+            }
+
+            document.querySelectorAll(".item-dropzone").forEach((zone) => {
+                zone.ondragover = (e) => {
+                    e.preventDefault();
+                    zone.classList.add("drag-over");
+                };
+                zone.ondragleave = () => zone.classList.remove("drag-over");
+                zone.ondrop = (e) => {
+                    e.preventDefault();
+                    zone.classList.remove("drag-over");
+                    const id = e.dataTransfer.getData("text");
+                    const el = document.getElementById(id);
+                    zone.appendChild(el);
+                };
+            });
+
+            document.getElementById("add-btn").onclick = addItem;
+            document.getElementById("reset-btn").onclick = () => {
+                document
+                    .querySelectorAll(".item")
+                    .forEach((item) => startTier.appendChild(item));
+            };
+            input.onkeypress = (e) => {
+                if (e.key === "Enter") addItem();
+            };
+        </script>
+    </body>
+</html>
