@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>CookedRacing | CookedWater</title>
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                setTimeout(() => {
+                    document.getElementById("iframe").src = "cookedracing.html";
+                }, 5000);
+            });
+        </script>
+    </head>
+    <body>
+        <iframe
+            src="download.html"
+            id="iframe"
+            style="
+                width: 100vw;
+                height: 100vh;
+                display: block;
+                border: none;
+                top: 0;
+                left: 0;
+                background-color: white;
+                position: fixed;
+            "
+        ></iframe>
+    </body>
+</html>
