@@ -12,8 +12,9 @@ const Game = {
         zoom: 1,
         targetZoom: 1,
         following: null,
-        offsetX: 0,
-        offsetY: 0
+        smoothing: 0.08,
+        minZoom: 0.1,
+        maxZoom: 50
     },
     
     timeScale: 1,
@@ -24,6 +25,12 @@ const Game = {
     
     missionComplete: false,
     visitedBodies: ['earth'],
+    
+    showTrajectory: true,
+    trajectoryPoints: [],
+    trajectorySteps: 300,
+    
+    showNavball: false,
     
     init() {
         this.canvas = document.createElement('canvas');
@@ -67,8 +74,8 @@ const Game = {
         
         this.camera.x = Rocket.x;
         this.camera.y = Rocket.y;
-        this.camera.zoom = 5;
-        this.camera.targetZoom = 5;
+        this.camera.zoom = 0.00001;
+        this.camera.targetZoom = 0.00001;
         
         this.visitedBodies = ['earth'];
         this.missionComplete = false;
@@ -93,8 +100,8 @@ const Game = {
         
         this.camera.x = Rocket.x;
         this.camera.y = Rocket.y;
-        this.camera.zoom = 5;
-        this.camera.targetZoom = 5;
+        this.camera.zoom = 0.00001;
+        this.camera.targetZoom = 0.00001;
         
         UI.showGame();
         UI.showMessage('LAUNCH SUCCESSFUL!', 3000);
@@ -178,6 +185,11 @@ const Game = {
             UI.showMessage(Rocket.rcsEnabled ? 'RCS ON' : 'RCS OFF', 1000);
         }
         
+        if (Input.isJustPressed('g')) {
+            Rocket.gearDeployed = !Rocket.gearDeployed;
+            UI.showMessage(Rocket.gearDeployed ? 'GEAR DEPLOYED' : 'GEAR RETRACTED', 1000);
+        }
+        
         if (Input.isJustPressed('t')) {
             if (this.timeScale === 1) this.timeScale = 10;
             else if (this.timeScale === 10) this.timeScale = 100;
@@ -190,11 +202,21 @@ const Game = {
             UI.toggleOrbitInfo();
         }
         
+        if (Input.isJustPressed('f')) {
+            this.showTrajectory = !this.showTrajectory;
+            UI.showMessage(this.showTrajectory ? 'TRAJECTORY ON' : 'TRAJECTORY OFF', 1000);
+        }
+        
+        if (Input.isJustPressed('n')) {
+            this.showNavball = !this.showNavball;
+            UI.toggleNavball();
+        }
+        
         if (Input.scrollDelta > 0) {
-            this.camera.targetZoom = Math.max(0.5, this.camera.targetZoom - 0.5);
+            this.camera.targetZoom = Math.max(this.camera.minZoom, this.camera.targetZoom - this.camera.targetZoom * 0.2);
         }
         if (Input.scrollDelta < 0) {
-            this.camera.targetZoom = Math.min(20, this.camera.targetZoom + 0.5);
+            this.camera.targetZoom = Math.min(this.camera.maxZoom, this.camera.targetZoom + this.camera.targetZoom * 0.2);
         }
         
         if (Input.isJustPressed('p')) {
@@ -233,34 +255,47 @@ const Game = {
                 }
             }
             
+            if (this.showTrajectory && !Rocket.landed && !Rocket.crashed) {
+                this.trajectoryPoints = Physics.predictTrajectory(
+                    Rocket.x, Rocket.y,
+                    Rocket.vx, Rocket.vy,
+                    Planets.getAllBodies(),
+                    this.trajectorySteps,
+                    10,
+                    Rocket.currentThrust,
+                    Rocket.angle,
+                    Rocket.totalMass
+                );
+            }
+            
             this.updateCamera(dt);
             
-            UI.updateHUD(Rocket, nearest.body);
+            UI.updateHUD(Rocket, nearest.body, this);
         }
     },
     
     updateCamera(dt) {
+        const zoomSmoothing = 0.1;
+        this.camera.zoom += (this.camera.targetZoom - this.camera.zoom) * zoomSmoothing;
+        
         switch (UI.viewMode) {
             case 1:
                 this.camera.following = { x: Rocket.x, y: Rocket.y };
-                this.camera.zoom = 5;
                 break;
             case 2:
                 const nearest = Planets.getNearestBody(Rocket.x, Rocket.y);
                 if (nearest.body) {
                     this.camera.following = { x: nearest.body.x, y: nearest.body.y };
                 }
-                this.camera.zoom = 0.5;
                 break;
             case 3:
                 this.camera.following = { x: Rocket.x, y: Rocket.y };
-                this.camera.zoom = this.camera.targetZoom;
                 break;
         }
         
         if (this.camera.following) {
-            this.camera.x += (this.camera.following.x - this.camera.x) * 0.1;
-            this.camera.y += (this.camera.following.y - this.camera.y) * 0.1;
+            this.camera.x += (this.camera.following.x - this.camera.x) * this.camera.smoothing;
+            this.camera.y += (this.camera.following.y - this.camera.y) * this.camera.smoothing;
         }
     },
     
@@ -290,10 +325,6 @@ const Game = {
         const rocketScreenX = this.width / 2;
         const rocketScreenY = horizon - 100;
         
-        const rocketDx = Rocket.x - earth.x;
-        const rocketDy = Rocket.y - earth.y;
-        const rocketAngle = Math.atan2(Rocket.vy, Rocket.vx);
-        
         this.ctx.fillStyle = '#112233';
         this.ctx.fillRect(0, 0, this.width, horizon);
         
@@ -304,27 +335,20 @@ const Game = {
         this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.width, horizon);
         
-        const stars = [];
         for (let i = 0; i < 100; i++) {
-            stars.push({
-                x: Math.random() * this.width,
-                y: Math.random() * horizon * 0.7,
-                size: Math.random() * 2,
-                twinkle: Math.random() * Math.PI * 2
-            });
-        }
-        
-        for (const star of stars) {
-            const twinkle = Math.sin(performance.now() / 1000 + star.twinkle) * 0.3 + 0.7;
+            const x = (Math.sin(i * 1234.5) * this.width + this.width) % this.width;
+            const y = (Math.cos(i * 5678.9) * horizon * 0.7 + horizon * 0.7) % (horizon * 0.7);
+            const twinkle = Math.sin(performance.now() / 1000 + i) * 0.3 + 0.7;
             this.ctx.fillStyle = `rgba(255, 255, 255, ${twinkle})`;
             this.ctx.beginPath();
-            this.ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+            this.ctx.arc(x, y, Math.random() * 1.5 + 0.5, 0, Math.PI * 2);
             this.ctx.fill();
         }
         
+        const earthRadius = Math.min(300, this.width * 0.3);
         const earthGradient = this.ctx.createRadialGradient(
-            this.width / 2, horizon + 200, 0,
-            this.width / 2, horizon + 200, 400
+            this.width / 2, horizon + earthRadius * 0.8, 0,
+            this.width / 2, horizon + earthRadius * 0.8, earthRadius
         );
         earthGradient.addColorStop(0, '#4488ff');
         earthGradient.addColorStop(0.3, '#3366cc');
@@ -333,23 +357,20 @@ const Game = {
         
         this.ctx.fillStyle = earthGradient;
         this.ctx.beginPath();
-        this.ctx.arc(this.width / 2, horizon + 300, 300, 0, Math.PI * 2);
+        this.ctx.arc(this.width / 2, horizon + earthRadius * 0.9, earthRadius, 0, Math.PI * 2);
         this.ctx.fill();
         
-        if (Rocket.altitude < 500) {
-            const atmosphereHeight = 20;
-            const atmGradient = this.ctx.createLinearGradient(0, horizon - 10, 0, horizon + 10);
+        if (earth.atmosphere) {
+            const atmosphereHeight = earth.atmosphere.height / 100000 * 50;
+            const atmGradient = this.ctx.createLinearGradient(0, horizon - 10, 0, horizon + 20);
             atmGradient.addColorStop(0, 'rgba(100, 150, 255, 0)');
             atmGradient.addColorStop(0.5, 'rgba(100, 150, 255, 0.5)');
             atmGradient.addColorStop(1, 'rgba(100, 150, 255, 0)');
             this.ctx.fillStyle = atmGradient;
             this.ctx.beginPath();
-            this.ctx.arc(this.width / 2, horizon + 300, 300 + atmosphereHeight, Math.PI, 0);
+            this.ctx.arc(this.width / 2, horizon + earthRadius * 0.9, earthRadius + atmosphereHeight, Math.PI, 0);
             this.ctx.fill();
         }
-        
-        const rocketWorldX = earth.x + rocketDx * 0.1;
-        const rocketWorldY = earth.y - (Rocket.altitude / 50) * 10;
         
         this.ctx.save();
         this.ctx.translate(rocketScreenX, rocketScreenY);
@@ -357,7 +378,7 @@ const Game = {
         
         this.drawRocketShape(this.ctx, 30);
         
-        if (Rocket.throttle > 0) {
+        if (Rocket.throttle > 0 && !Rocket.landed) {
             this.ctx.fillStyle = '#ffaa00';
             this.ctx.beginPath();
             const flameLength = 20 + Math.random() * 15 * Rocket.throttle;
@@ -378,20 +399,17 @@ const Game = {
         
         this.ctx.restore();
         
-        const altitude = Math.round(Rocket.altitude);
+        const altitude = Math.round(Rocket.altitude / 1000);
         this.ctx.fillStyle = '#00ff88';
         this.ctx.font = '14px monospace';
         this.ctx.textAlign = 'left';
-        this.ctx.fillText(`ALT: ${altitude}m`, 20, this.height - 80);
+        this.ctx.fillText(`ALT: ${altitude}km`, 20, this.height - 80);
         this.ctx.fillText(`VEL: ${Math.round(Rocket.velocity)} m/s`, 20, this.height - 60);
         
-        if (Rocket.altitude < 100) {
-            const height = horizon - (Rocket.altitude / 50) * 10 - 100;
-            if (height > horizon - 300) {
-                this.ctx.fillStyle = '#00ff88';
-                this.ctx.font = '12px monospace';
-                this.ctx.fillText('GROUND INCOMING!', rocketScreenX - 60, height);
-            }
+        if (Rocket.heat > 0) {
+            const heatPercent = (Rocket.heat / Rocket.maxHeat) * 100;
+            this.ctx.fillStyle = heatPercent > 75 ? '#ff4444' : '#ffaa00';
+            this.ctx.fillText(`HEAT: ${Math.round(heatPercent)}%`, 20, this.height - 40);
         }
     },
     
@@ -412,11 +430,11 @@ const Game = {
         }
         
         const viewRange = 1000 / this.camera.zoom;
-        const scale = 200 / viewRange;
+        const scale = 200 / Math.max(1, viewRange);
         
         const bodyScreenX = this.width / 2 - (Rocket.x - body.x) * scale;
         const bodyScreenY = horizon + 200;
-        const bodyRadius = body.radius * scale;
+        const bodyRadius = Math.max(10, body.radius * scale);
         
         const bodyGradient = this.ctx.createRadialGradient(
             bodyScreenX, bodyScreenY - bodyRadius * 0.3, 0,
@@ -430,30 +448,35 @@ const Game = {
         this.ctx.arc(bodyScreenX, bodyScreenY, bodyRadius, 0, Math.PI * 2);
         this.ctx.fill();
         
-        if (body.atmosphere) {
+        if (body.atmosphere && this.camera.zoom < 0.001) {
             const atmGradient = this.ctx.createRadialGradient(
                 bodyScreenX, bodyScreenY, bodyRadius,
-                bodyScreenX, bodyScreenY, bodyRadius + body.atmosphere.height * scale
+                bodyScreenX, bodyScreenY, bodyRadius + (body.atmosphere.height || 100000) * scale * 0.001
             );
-            atmGradient.addColorStop(0, body.atmosphere.color);
+            atmGradient.addColorStop(0, body.atmosphere.color || 'rgba(100, 150, 255, 0.4)');
             atmGradient.addColorStop(1, 'rgba(0,0,0,0)');
             this.ctx.fillStyle = atmGradient;
             this.ctx.beginPath();
-            this.ctx.arc(bodyScreenX, bodyScreenY, bodyRadius + body.atmosphere.height * scale, 0, Math.PI * 2);
+            this.ctx.arc(bodyScreenX, bodyScreenY, bodyRadius + (body.atmosphere.height || 100000) * scale * 0.001, 0, Math.PI * 2);
             this.ctx.fill();
         }
+        
+        if (this.showTrajectory && this.trajectoryPoints.length > 0) {
+            this.renderTrajectory(horizon);
+        }
+        
+        this.ctx.save();
         
         const rocketDx = (Rocket.x - body.x) * scale;
         const rocketDy = -(Rocket.y - body.y - body.radius - Rocket.altitude) * scale * 0.5;
         const rocketScreenX = this.width / 2 + rocketDx;
         const rocketScreenY = horizon - 150 + rocketDy;
         
-        this.ctx.save();
         this.ctx.translate(rocketScreenX, rocketScreenY);
         this.ctx.rotate(Rocket.angle + Math.PI / 2);
         this.drawRocketShape(this.ctx, 20);
         
-        if (Rocket.throttle > 0) {
+        if (Rocket.throttle > 0 && !Rocket.landed) {
             this.ctx.fillStyle = '#ffaa00';
             this.ctx.beginPath();
             this.ctx.moveTo(-5, 20);
@@ -466,45 +489,43 @@ const Game = {
     },
     
     renderOrbitalView() {
-        const offsetX = this.width / 2 - this.camera.x;
-        const offsetY = this.height / 2 - this.camera.y;
-        const scale = 1 * this.camera.zoom;
+        const offsetX = this.width / 2 - this.camera.x * this.camera.zoom;
+        const offsetY = this.height / 2 - this.camera.y * this.camera.zoom;
         
         this.ctx.fillStyle = '#000011';
         this.ctx.fillRect(0, 0, this.width, this.height);
         
         for (let i = 0; i < 200; i++) {
-            const x = (Math.sin(i * 1234.5) * 5000 + 5000) * scale + offsetX;
-            const y = (Math.cos(i * 5678.9) * 5000 + 5000) * scale + offsetY;
-            if (x > 0 && x < this.width && y > 0 && y < this.height) {
+            const starX = (Math.sin(i * 1234.5 + this.camera.x * 0.00001) * 500000 + 500000) * this.camera.zoom + offsetX;
+            const starY = (Math.cos(i * 5678.9 + this.camera.y * 0.00001) * 500000 + 500000) * this.camera.zoom + offsetY;
+            if (starX > 0 && starX < this.width && starY > 0 && starY < this.height) {
                 this.ctx.fillStyle = `rgba(255, 255, 255, ${Math.random() * 0.5 + 0.3})`;
                 this.ctx.beginPath();
-                this.ctx.arc(x, y, Math.random() * 1.5, 0, Math.PI * 2);
+                this.ctx.arc(starX, starY, Math.random() * 1.5 + 0.5, 0, Math.PI * 2);
                 this.ctx.fill();
             }
         }
         
         for (const body of Planets.bodies) {
             if (body.orbitRadius) {
-                this.ctx.strokeStyle = 'rgba(0, 255, 136, 0.2)';
+                this.ctx.strokeStyle = 'rgba(0, 255, 136, 0.15)';
                 this.ctx.lineWidth = 1;
                 this.ctx.beginPath();
                 this.ctx.arc(
-                    body.orbitRadius * scale + offsetX,
-                    body.orbitRadius * scale + offsetY,
-                    body.orbitRadius * scale,
+                    offsetX, offsetY,
+                    body.orbitRadius * this.camera.zoom,
                     0, Math.PI * 2
                 );
                 this.ctx.stroke();
             }
             
-            const screenX = body.x * scale + offsetX;
-            const screenY = body.y * scale + offsetY;
+            const screenX = body.x * this.camera.zoom + offsetX;
+            const screenY = body.y * this.camera.zoom + offsetY;
             
             if (screenX < -100 || screenX > this.width + 100 || 
                 screenY < -100 || screenY > this.height + 100) continue;
             
-            const bodyRadius = Math.max(3, body.radius * scale);
+            const bodyRadius = Math.max(3, body.radius * this.camera.zoom * 0.001);
             
             if (body.id === 'sun') {
                 const glow = this.ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, bodyRadius * 3);
@@ -521,19 +542,11 @@ const Game = {
             this.ctx.arc(screenX, screenY, bodyRadius, 0, Math.PI * 2);
             this.ctx.fill();
             
-            if (body.id === 'saturn' && body.hasRings) {
-                this.ctx.strokeStyle = body.ringColor;
+            if (body.hasRings) {
+                this.ctx.strokeStyle = 'rgba(200, 180, 100, 0.5)';
                 this.ctx.lineWidth = bodyRadius * 0.3;
                 this.ctx.beginPath();
                 this.ctx.ellipse(screenX, screenY, bodyRadius * 2, bodyRadius * 0.5, Math.PI * 0.1, 0, Math.PI * 2);
-                this.ctx.stroke();
-            }
-            
-            if (body.atmosphere) {
-                this.ctx.strokeStyle = body.atmosphere.color;
-                this.ctx.lineWidth = 2;
-                this.ctx.beginPath();
-                this.ctx.arc(screenX, screenY, bodyRadius + 3, 0, Math.PI * 2);
                 this.ctx.stroke();
             }
             
@@ -543,20 +556,8 @@ const Game = {
             this.ctx.fillText(body.name, screenX, screenY + bodyRadius + 15);
         }
         
-        if (Rocket.moons) {
-            for (const moon of Rocket.moons) {
-                const screenX = moon.x * scale + offsetX;
-                const screenY = moon.y * scale + offsetY;
-                
-                this.ctx.fillStyle = moon.color;
-                this.ctx.beginPath();
-                this.ctx.arc(screenX, screenY, Math.max(2, moon.radius * scale), 0, Math.PI * 2);
-                this.ctx.fill();
-            }
-        }
-        
-        const rocketScreenX = Rocket.x * scale + offsetX;
-        const rocketScreenY = Rocket.y * scale + offsetY;
+        const rocketScreenX = Rocket.x * this.camera.zoom + offsetX;
+        const rocketScreenY = Rocket.y * this.camera.zoom + offsetY;
         
         this.ctx.save();
         this.ctx.translate(rocketScreenX, rocketScreenY);
@@ -571,7 +572,7 @@ const Game = {
         this.ctx.closePath();
         this.ctx.stroke();
         
-        if (Rocket.throttle > 0) {
+        if (Rocket.throttle > 0 && !Rocket.landed) {
             this.ctx.fillStyle = '#ffaa00';
             this.ctx.beginPath();
             this.ctx.moveTo(-3, 8);
@@ -583,8 +584,27 @@ const Game = {
         
         this.ctx.restore();
         
+        if (this.showTrajectory && this.trajectoryPoints.length > 0) {
+            this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            this.ctx.setLineDash([5, 5]);
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            
+            const steps = Math.min(this.trajectoryPoints.length, 100);
+            for (let i = 0; i < steps; i++) {
+                const p = this.trajectoryPoints[Math.floor(i * this.trajectoryPoints.length / steps)];
+                const screenX = p.x * this.camera.zoom + offsetX;
+                const screenY = p.y * this.camera.zoom + offsetY;
+                
+                if (i === 0) this.ctx.moveTo(screenX, screenY);
+                else this.ctx.lineTo(screenX, screenY);
+            }
+            this.ctx.stroke();
+            this.ctx.setLineDash([]);
+        }
+        
         const orbit = Rocket.getOrbitInfo();
-        if (orbit) {
+        if (orbit && UI.viewMode === 2) {
             const nearestOrbit = Planets.getNearestBody(Rocket.x, Rocket.y);
             if (nearestOrbit.body) {
                 this.ctx.strokeStyle = 'rgba(0, 255, 136, 0.3)';
@@ -596,8 +616,8 @@ const Game = {
                     const angle = (i / steps) * Math.PI * 2;
                     const r = nearestOrbit.body.radius + orbit.periapsis + (orbit.apoapsis - orbit.periapsis) * 
                               (1 + Math.cos(angle)) / 2;
-                    const px = (nearestOrbit.body.x + Math.cos(angle) * r) * scale + offsetX;
-                    const py = (nearestOrbit.body.y + Math.sin(angle) * r) * scale + offsetY;
+                    const px = (nearestOrbit.body.x + Math.cos(angle) * r) * this.camera.zoom + offsetX;
+                    const py = (nearestOrbit.body.y + Math.sin(angle) * r) * this.camera.zoom + offsetY;
                     
                     if (i === 0) this.ctx.moveTo(px, py);
                     else this.ctx.lineTo(px, py);
@@ -606,6 +626,35 @@ const Game = {
                 this.ctx.setLineDash([]);
             }
         }
+    },
+    
+    renderTrajectory(horizon) {
+        const nearest = Planets.getNearestBody(Rocket.x, Rocket.y);
+        if (!nearest.body) return;
+        
+        const body = nearest.body;
+        const viewRange = 1000 / this.camera.zoom;
+        const scale = 200 / Math.max(1, viewRange);
+        
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        this.ctx.setLineDash([5, 5]);
+        this.ctx.lineWidth = 2;
+        this.ctx.beginPath();
+        
+        const stepSize = Math.floor(this.trajectoryPoints.length / 50);
+        for (let i = 0; i < this.trajectoryPoints.length; i += stepSize) {
+            const p = this.trajectoryPoints[i];
+            
+            const dx = (p.x - body.x) * scale;
+            const dy = -(p.y - body.y - body.radius - Rocket.altitude) * scale * 0.5;
+            const screenX = this.width / 2 + dx;
+            const screenY = horizon - 150 + dy;
+            
+            if (i === 0) this.ctx.moveTo(screenX, screenY);
+            else this.ctx.lineTo(screenX, screenY);
+        }
+        this.ctx.stroke();
+        this.ctx.setLineDash([]);
     },
     
     drawRocketShape(ctx, size) {

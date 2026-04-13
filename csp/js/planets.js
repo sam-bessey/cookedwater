@@ -2,6 +2,76 @@ const Planets = {
     bodies: [],
     scale: 1,
     timeScale: 1,
+    terrains: {},
+    
+    atmosphereData: {
+        sun: {
+            height: 0,
+            scaleHeight: 0,
+            density: 0,
+            hasRealAtmosphere: false
+        },
+        mercury: {
+            height: 0,
+            scaleHeight: 0,
+            density: 0,
+            hasRealAtmosphere: false
+        },
+        venus: {
+            height: 250000,
+            scaleHeight: 15900,
+            density: 65,
+            hasRealAtmosphere: true
+        },
+        earth: {
+            height: 100000,
+            scaleHeight: 8500,
+            density: 1.225,
+            hasRealAtmosphere: true
+        },
+        moon: {
+            height: 0,
+            scaleHeight: 0,
+            density: 0,
+            hasRealAtmosphere: false
+        },
+        mars: {
+            height: 80000,
+            scaleHeight: 11000,
+            density: 0.020,
+            hasRealAtmosphere: true
+        },
+        jupiter: {
+            height: 100000,
+            scaleHeight: 27000,
+            density: 0.16,
+            hasRealAtmosphere: true
+        },
+        saturn: {
+            height: 60000,
+            scaleHeight: 29500,
+            density: 0.19,
+            hasRealAtmosphere: true
+        },
+        uranus: {
+            height: 50000,
+            scaleHeight: 22000,
+            density: 0.42,
+            hasRealAtmosphere: true
+        },
+        neptune: {
+            height: 50000,
+            scaleHeight: 20500,
+            density: 0.71,
+            hasRealAtmosphere: true
+        },
+        pluto: {
+            height: 0,
+            scaleHeight: 0,
+            density: 0,
+            hasRealAtmosphere: false
+        }
+    },
     
     colors: {
         sun: '#ffff00',
@@ -26,232 +96,235 @@ const Planets = {
             {
                 id: 'sun',
                 name: 'Sun',
-                mass: 1000,
-                radius: 70,
+                mass: 1.989e30,
+                radius: 69634000000,
                 color: '#ffff00',
                 x: 0,
                 y: 0,
                 vx: 0,
                 vy: 0,
                 parent: null,
-                atmosphere: { color: 'rgba(255, 200, 50, 0.3)', height: 50 },
+                atmosphere: null,
                 surfaceGravity: 274,
-                isStationary: true
+                isStationary: true,
+                orbitRadius: 0,
+                hasTerrain: false,
+                rotationPeriod: 25 * 86400
             },
             {
                 id: 'mercury',
                 name: 'Mercury',
-                mass: 1.2,
-                radius: 5,
+                mass: 3.285e23,
+                radius: 2439700000,
                 color: '#888888',
-                x: 200,
+                x: 57900000000,
                 y: 0,
                 vx: 0,
-                vy: 0,
-                parent: null,
-                orbitRadius: 200,
+                vy: 47400,
+                parent: 'sun',
+                orbitRadius: 57900000000,
                 orbitSpeed: 0.0008,
                 orbitAngle: 0,
+                eccentricity: 0.205,
                 atmosphere: null,
                 surfaceGravity: 3.7,
-                hasMoons: false
+                hasTerrain: true,
+                rotationPeriod: 58.6 * 86400
             },
             {
                 id: 'venus',
                 name: 'Venus',
-                mass: 8.0,
-                radius: 9,
+                mass: 4.867e24,
+                radius: 6051800000,
                 color: '#ffaa44',
-                x: 320,
+                x: 108200000000,
                 y: 0,
                 vx: 0,
-                vy: 0,
-                parent: null,
-                orbitRadius: 320,
+                vy: 35000,
+                parent: 'sun',
+                orbitRadius: 108200000000,
                 orbitSpeed: 0.0006,
                 orbitAngle: Math.PI * 0.4,
-                atmosphere: { color: 'rgba(255, 150, 50, 0.5)', height: 30 },
+                eccentricity: 0.007,
+                atmosphere: this.atmosphereData.venus,
                 surfaceGravity: 8.87,
-                hasMoons: false
+                hasTerrain: true,
+                rotationPeriod: -243 * 86400
             },
             {
                 id: 'earth',
                 name: 'Earth',
-                mass: 10,
-                radius: 10,
+                mass: 5.972e24,
+                radius: 6371000000,
                 color: '#4488ff',
-                x: 480,
+                x: 149600000000,
                 y: 0,
                 vx: 0,
-                vy: 0,
-                parent: null,
-                orbitRadius: 480,
+                vy: 29800,
+                parent: 'sun',
+                orbitRadius: 149600000000,
                 orbitSpeed: 0.0005,
                 orbitAngle: Math.PI * 0.7,
-                atmosphere: { color: 'rgba(100, 150, 255, 0.4)', height: 20 },
+                eccentricity: 0.017,
+                atmosphere: this.atmosphereData.earth,
                 surfaceGravity: 9.81,
-                hasMoons: true,
+                hasTerrain: true,
+                rotationPeriod: 86164,
                 moons: [{
                     id: 'moon',
                     name: 'Moon',
-                    mass: 0.3,
-                    radius: 4,
+                    mass: 7.342e22,
+                    radius: 1737000000,
                     color: '#aaaaaa',
-                    x: 480 + 35,
+                    x: 149600000000 + 38440000000,
                     y: 0,
                     vx: 0,
-                    vy: 0,
-                    parent: null,
-                    orbitRadius: 35,
-                    orbitSpeed: 0.01,
+                    vy: 29800 + 1022,
+                    parent: 'earth',
+                    orbitRadius: 38440000000,
+                    orbitSpeed: 0.002,
                     orbitAngle: 0,
+                    eccentricity: 0.055,
                     atmosphere: null,
                     surfaceGravity: 1.62,
-                    parentBody: 'earth'
+                    hasTerrain: true,
+                    rotationPeriod: 27.3 * 86400
                 }]
             },
             {
                 id: 'mars',
                 name: 'Mars',
-                mass: 3.5,
-                radius: 7,
+                mass: 6.39e23,
+                radius: 3389000000,
                 color: '#ff4422',
-                x: 680,
+                x: 227900000000,
                 y: 0,
                 vx: 0,
-                vy: 0,
-                parent: null,
-                orbitRadius: 680,
+                vy: 24100,
+                parent: 'sun',
+                orbitRadius: 227900000000,
                 orbitSpeed: 0.0004,
                 orbitAngle: Math.PI * 1.2,
-                atmosphere: { color: 'rgba(255, 100, 50, 0.3)', height: 15 },
+                eccentricity: 0.093,
+                atmosphere: this.atmosphereData.mars,
                 surfaceGravity: 3.71,
-                hasMoons: false
+                hasTerrain: true,
+                rotationPeriod: 88775
             },
             {
                 id: 'jupiter',
                 name: 'Jupiter',
-                mass: 250,
-                radius: 35,
+                mass: 1.898e27,
+                radius: 69911000000,
                 color: '#ffaa66',
-                x: 1100,
+                x: 778600000000,
                 y: 0,
                 vx: 0,
-                vy: 0,
-                parent: null,
-                orbitRadius: 1100,
+                vy: 13100,
+                parent: 'sun',
+                orbitRadius: 778600000000,
                 orbitSpeed: 0.0002,
                 orbitAngle: Math.PI * 0.3,
-                atmosphere: { color: 'rgba(255, 200, 100, 0.4)', height: 40 },
+                eccentricity: 0.049,
+                atmosphere: this.atmosphereData.jupiter,
                 surfaceGravity: 24.79,
-                hasMoons: false
+                hasTerrain: false,
+                rotationPeriod: 35543
             },
             {
                 id: 'saturn',
                 name: 'Saturn',
-                mass: 100,
-                radius: 28,
+                mass: 5.683e26,
+                radius: 58232000000,
                 color: '#ffdd88',
-                x: 1500,
+                x: 1434000000000,
                 y: 0,
                 vx: 0,
-                vy: 0,
-                parent: null,
-                orbitRadius: 1500,
+                vy: 9690,
+                parent: 'sun',
+                orbitRadius: 1434000000000,
                 orbitSpeed: 0.00015,
                 orbitAngle: Math.PI * 1.5,
-                atmosphere: { color: 'rgba(255, 240, 150, 0.4)', height: 35 },
+                eccentricity: 0.056,
+                atmosphere: this.atmosphereData.saturn,
                 surfaceGravity: 10.44,
-                hasMoons: false,
+                hasTerrain: false,
+                rotationPeriod: 38361,
                 hasRings: true,
-                ringColor: 'rgba(200, 180, 100, 0.5)'
+                ringInner: 74500000000,
+                ringOuter: 140220000000
             },
             {
                 id: 'uranus',
                 name: 'Uranus',
-                mass: 40,
-                radius: 15,
+                mass: 8.681e25,
+                radius: 25362000000,
                 color: '#44ffff',
-                x: 2000,
+                x: 2871000000000,
                 y: 0,
                 vx: 0,
-                vy: 0,
-                parent: null,
-                orbitRadius: 2000,
+                vy: 6810,
+                parent: 'sun',
+                orbitRadius: 2871000000000,
                 orbitSpeed: 0.0001,
                 orbitAngle: Math.PI * 0.9,
-                atmosphere: { color: 'rgba(100, 255, 255, 0.3)', height: 20 },
+                eccentricity: 0.046,
+                atmosphere: this.atmosphereData.uranus,
                 surfaceGravity: 8.87,
-                hasMoons: false
+                hasTerrain: false,
+                rotationPeriod: -30687
             },
             {
                 id: 'neptune',
                 name: 'Neptune',
-                mass: 45,
-                radius: 14,
+                mass: 1.024e26,
+                radius: 24622000000,
                 color: '#4444ff',
-                x: 2500,
+                x: 4495000000000,
                 y: 0,
                 vx: 0,
-                vy: 0,
-                parent: null,
-                orbitRadius: 2500,
+                vy: 5430,
+                parent: 'sun',
+                orbitRadius: 4495000000000,
                 orbitSpeed: 0.00008,
                 orbitAngle: Math.PI * 0.1,
-                atmosphere: { color: 'rgba(50, 50, 255, 0.4)', height: 20 },
+                eccentricity: 0.010,
+                atmosphere: this.atmosphereData.neptune,
                 surfaceGravity: 11.15,
-                hasMoons: false
+                hasTerrain: false,
+                rotationPeriod: 57327
             },
             {
                 id: 'pluto',
                 name: 'Pluto',
-                mass: 0.1,
-                radius: 3,
+                mass: 1.303e22,
+                radius: 1188000000,
                 color: '#cccccc',
-                x: 3000,
+                x: 5906000000000,
                 y: 0,
                 vx: 0,
-                vy: 0,
-                parent: null,
-                orbitRadius: 3000,
+                vy: 4670,
+                parent: 'sun',
+                orbitRadius: 5906000000000,
                 orbitSpeed: 0.00006,
                 orbitAngle: Math.PI * 1.8,
+                eccentricity: 0.248,
                 atmosphere: null,
                 surfaceGravity: 0.62,
-                hasMoons: false
+                hasTerrain: true,
+                rotationPeriod: -6.4 * 86400
             }
         ];
         
-        this.setupOrbits();
+        this.calculateOrbitalVelocities();
     },
     
-    setupOrbits() {
+    calculateOrbitalVelocities() {
         for (const body of this.bodies) {
-            if (body.orbitRadius) {
-                const angle = body.orbitAngle;
-                body.x = Math.cos(angle) * body.orbitRadius;
-                body.y = Math.sin(angle) * body.orbitRadius;
-                
-                const orbitalSpeed = body.orbitSpeed * 100;
-                body.vx = -Math.sin(angle) * orbitalSpeed;
-                body.vy = Math.cos(angle) * orbitalSpeed;
-            }
-        }
-        
-        for (const body of this.bodies) {
-            if (body.moons) {
-                for (const moon of body.moons) {
-                    const parent = this.getBody(body.parentBody);
-                    if (parent) {
-                        const angle = moon.orbitAngle;
-                        moon.x = parent.x + Math.cos(angle) * moon.orbitRadius;
-                        moon.y = parent.y + Math.sin(angle) * moon.orbitRadius;
-                        
-                        const orbitalSpeed = moon.orbitSpeed * 50;
-                        moon.vx = parent.vx - Math.sin(angle) * orbitalSpeed;
-                        moon.vy = parent.vy + Math.cos(angle) * orbitalSpeed;
-                    }
-                }
+            if (body.orbitRadius && body.parent === 'sun') {
+                const orbitalSpeed = Math.sqrt(Physics.G * 1.989e30 / body.orbitRadius);
+                body.vx = 0;
+                body.vy = body.vy || orbitalSpeed;
             }
         }
     },
@@ -260,21 +333,35 @@ const Planets = {
         const scaledDt = dt * this.timeScale;
         
         for (const body of this.bodies) {
-            if (!body.isStationary && body.orbitRadius) {
-                body.orbitAngle += body.orbitSpeed * scaledDt;
+            if (!body.isStationary && body.orbitRadius && body.parent === 'sun') {
+                const angle = Math.atan2(body.y, body.x);
+                const orbitalSpeed = body.vy || Math.sqrt(Physics.G * 1.989e30 / body.orbitRadius);
+                
+                body.orbitAngle = Math.atan2(body.y, body.x);
+                body.orbitAngle += (orbitalSpeed / body.orbitRadius) * scaledDt;
+                
                 body.x = Math.cos(body.orbitAngle) * body.orbitRadius;
                 body.y = Math.sin(body.orbitAngle) * body.orbitRadius;
+                
+                body.vx = -Math.sin(body.orbitAngle) * orbitalSpeed;
+                body.vy = Math.cos(body.orbitAngle) * orbitalSpeed;
             }
         }
         
         for (const body of this.bodies) {
             if (body.moons) {
-                const parent = this.getBody(body.parentBody);
+                const parent = this.getBody(body.id);
                 if (parent) {
                     for (const moon of body.moons) {
-                        moon.orbitAngle += moon.orbitSpeed * scaledDt;
+                        moon.orbitAngle = Math.atan2(moon.x - parent.x, moon.y - parent.y);
+                        moon.orbitAngle += (moon.orbitSpeed || 0.002) * scaledDt;
+                        
+                        const orbitalSpeed = 1022;
                         moon.x = parent.x + Math.cos(moon.orbitAngle) * moon.orbitRadius;
                         moon.y = parent.y + Math.sin(moon.orbitAngle) * moon.orbitRadius;
+                        
+                        moon.vx = parent.vx - Math.sin(moon.orbitAngle) * orbitalSpeed;
+                        moon.vy = parent.vy + Math.cos(moon.orbitAngle) * orbitalSpeed;
                     }
                 }
             }
@@ -332,6 +419,30 @@ const Planets = {
             }
         }
         return null;
+    },
+    
+    getAtmosphereInfo(body) {
+        if (!body || !body.atmosphere) return null;
+        
+        return {
+            height: body.atmosphere.height || 0,
+            density: body.atmosphere.density || 0,
+            scaleHeight: body.atmosphere.scaleHeight || 8500
+        };
+    },
+    
+    isInAtmosphere(x, y, body) {
+        if (!body || !body.atmosphere) return false;
+        
+        const dx = x - body.x;
+        const dy = y - body.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        
+        return dist < body.radius + body.atmosphere.height;
+    },
+    
+    getGravityAt(x, y) {
+        return Physics.getGravitationalAcceleration(x, y, this.getAllBodies());
     }
 };
 
