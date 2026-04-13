@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CookedFS</title>
+<style>
+  :root {
+    --green:   #a8ff3e;
+    --dim:     #4a7a10;
+    --red:     #ff4040;
+    --orange:  #ff9000;
+    --blue:    #40b0ff;
+    --bg:      #050a00;
+    --panel:   rgba(10,20,0,0.88);
+    --border:  #2a4a08;
+    --text:    #c8f070;
+    --muted:   #506030;
+    --font:    'Courier New', Courier, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    user-select: none;
+  }
+
+  canvas {
+    display: block;
+    position: absolute;
+    top: 0; left: 0;
+  }
+
+  .hidden { display: none !important; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #0a0a00; }
+  ::-webkit-scrollbar-thumb { background: var(--dim); }
+
+  /* ══════════════════════════════════════
+     TITLE SCREEN
+  ══════════════════════════════════════ */
+  #screen-title {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 0;
+    z-index: 100;
+  }
+
+  #title-ascii {
+    color: var(--green);
+    font-size: 13px;
+    line-height: 1.2;
+    white-space: pre;
+    text-shadow: 0 0 18px var(--green);
+    margin-bottom: 32px;
+  }
+
+  #title-sub {
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    margin-bottom: 56px;
+  }
+
+  .title-btn {
+    background: transparent;
+    border: 1px solid var(--green);
+    color: var(--green);
+    font-family: var(--font);
+    font-size: 13px;
+    padding: 10px 36px;
+    cursor: pointer;
+    letter-spacing: 3px;
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+    margin: 4px 0;
+    width: 220px;
+    text-align: center;
+  }
+  .title-btn:hover {
+    background: var(--green);
+    color: #050a00;
+    box-shadow: 0 0 20px var(--green);
+  }
+
+  #title-version {
+    position: absolute;
+    bottom: 16px; right: 20px;
+    color: var(--muted);
+    font-size: 10px;
+  }
+
+  /* ══════════════════════════════════════
+     VAB — VEHICLE ASSEMBLY BUILDING
+  ══════════════════════════════════════ */
+  #screen-vab {
+    position: absolute; inset: 0;
+    display: flex;
+    z-index: 50;
+  }
+
+  /* Parts panel – left */
+  #vab-parts {
+    width: 200px;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  #vab-parts-title {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    padding: 12px 14px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .parts-category {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--dim);
+    padding: 8px 14px 4px;
+    text-transform: uppercase;
+  }
+
+  .parts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 8px 8px;
+  }
+
+  .part-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 11px;
+    padding: 7px 10px;
+    cursor: grab;
+    text-align: left;
+    transition: border-color 0.12s, color 0.12s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .part-btn:hover {
+    border-color: var(--green);
+    color: var(--green);
+  }
+  .part-btn.selected {
+    border-color: var(--green);
+    background: rgba(168,255,62,0.08);
+    color: var(--green);
+  }
+
+  .part-icon {
+    width: 18px; height: 18px;
+    flex-shrink: 0;
+  }
+
+  /* Build canvas – center */
+  #vab-canvas-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #vab-canvas {
+    display: block;
+  }
+
+  /* VAB top bar */
+  #vab-topbar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 40px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    gap: 16px;
+    z-index: 10;
+  }
+
+  #vab-title-label {
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 3px;
+  }
+
+  #vab-rocket-name {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--green);
+    font-family: var(--font);
+    font-size: 13px;
+    width: 180px;
+    outline: none;
+    padding: 2px 4px;
+  }
+  #vab-rocket-name:focus { border-bottom-color: var(--green); }
+
+  .vab-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--font);
+    font-size: 11px;
+    padding: 5px 14px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.12s;
+    margin-left: auto;
+  }
+  .vab-btn:hover { border-color: var(--green); color: var(--green); }
+  .vab-btn.primary {
+    border-color: var(--green);
+    color: var(--green);
+  }
+  .vab-btn.primary:hover {
+    background: var(--green);
+    color: #050a00;
+    box-shadow: 0 0 12px var(--green);
+  }
+  .vab-btn.danger { border-color: var(--red); color: var(--red); }
+  .vab-btn.danger:hover { background: var(--red); color: #050a00; }
+
+  /* Info panel – right */
+  #vab-info {
+    width: 180px;
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    padding: 50px 12px 12px;
+    font-size: 11px;
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
+
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(42,74,8,0.4);
+  }
+  .info-label { color: var(--muted); }
+  .info-val { color: var(--text); }
+
+  .info-section {
+    color: var(--dim);
+    font-size: 10px;
+    letter-spacing: 2px;
+    margin: 12px 0 4px;
+  }
+
+  /* ══════════════════════════════════════
+     FLIGHT SCREEN HUD
+  ══════════════════════════════════════ */
+  #screen-flight {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    z-index: 50;
+  }
+  #screen-flight > * { pointer-events: all; }
+
+  /* Telemetry – top left */
+  #hud-telem {
+    position: absolute;
+    top: 10px; left: 10px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 10px 14px;
+    font-size: 11px;
+    min-width: 210px;
+    line-height: 1.8;
+  }
+
+  #hud-telem-title {
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 3px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 4px;
+  }
+
+  .telem-row { display: flex; justify-content: space-between; gap: 16px; }
+  .telem-label { color: var(--muted); }
+  .telem-val { color: var(--green); font-weight: bold; }
+  .telem-val.warn { color: var(--orange); }
+  .telem-val.crit { color: var(--red); }
+
+  /* Controls – bottom center */
+  #hud-controls {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .ctrl-key {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--font);
+    font-size: 10px;
+    padding: 4px 10px;
+    letter-spacing: 1px;
+  }
+  .ctrl-key.active {
+    border-color: var(--green);
+    color: var(--green);
+    box-shadow: 0 0 8px var(--green);
+  }
+  .ctrl-sep { color: var(--muted); font-size: 10px; }
+
+  /* Throttle – bottom left */
+  #hud-throttle {
+    position: absolute;
+    bottom: 16px; left: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  #throttle-bar-wrap {
+    width: 16px;
+    height: 120px;
+    background: rgba(42,74,8,0.3);
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  #throttle-bar {
+    width: 100%;
+    background: var(--green);
+    transition: height 0.1s;
+    box-shadow: 0 0 8px var(--green);
+  }
+
+  #throttle-pct {
+    color: var(--green);
+    font-size: 11px;
+    font-weight: bold;
+  }
+
+  /* Nav ball / attitude indicator – bottom right area */
+  #hud-navball {
+    position: absolute;
+    bottom: 16px; right: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  #navball-canvas { border: 1px solid var(--border); border-radius: 50%; }
+
+  /* Stage indicator */
+  #hud-stages {
+    position: absolute;
+    right: 16px; top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-end;
+  }
+
+  .stage-item {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    font-size: 10px;
+    color: var(--muted);
+    padding: 4px 10px;
+    letter-spacing: 1px;
+  }
+  .stage-item.current {
+    border-color: var(--orange);
+    color: var(--orange);
+    box-shadow: 0 0 8px rgba(255,144,0,0.3);
+  }
+
+  #stage-btn {
+    background: var(--panel);
+    border: 1px solid var(--orange);
+    color: var(--orange);
+    font-family: var(--font);
+    font-size: 12px;
+    padding: 8px 20px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    margin-top: 6px;
+    transition: all 0.12s;
+  }
+  #stage-btn:hover {
+    background: var(--orange);
+    color: #050a00;
+    box-shadow: 0 0 16px var(--orange);
+  }
+
+  /* Map toggle */
+  #hud-map-btn {
+    position: absolute;
+    top: 10px; right: 10px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--font);
+    font-size: 11px;
+    padding: 6px 14px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    transition: all 0.12s;
+  }
+  #hud-map-btn:hover, #hud-map-btn.active {
+    border-color: var(--blue);
+    color: var(--blue);
+    box-shadow: 0 0 10px rgba(64,176,255,0.3);
+  }
+
+  /* Back to VAB */
+  #hud-back-btn {
+    position: absolute;
+    top: 10px; left: 10px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--font);
+    font-size: 10px;
+    padding: 5px 12px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.12s;
+    pointer-events: all;
+  }
+  #hud-back-btn:hover { border-color: var(--red); color: var(--red); }
+
+  /* ── Time warp indicator ── */
+  #hud-warp {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--muted);
+    padding: 5px 16px;
+    letter-spacing: 2px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  #warp-val { color: var(--orange); }
+
+  /* ══════════════════════════════════════
+     MAP VIEW overlay
+  ══════════════════════════════════════ */
+  #map-legend {
+    position: absolute;
+    bottom: 16px; left: 16px;
+    font-size: 10px;
+    color: var(--muted);
+    line-height: 1.8;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    pointer-events: none;
+  }
+
+  /* ══════════════════════════════════════
+     NOTIFICATION / TOAST
+  ══════════════════════════════════════ */
+  #toast-wrap {
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+    z-index: 200;
+    pointer-events: none;
+  }
+
+  .toast {
+    background: var(--panel);
+    border: 1px solid var(--green);
+    color: var(--green);
+    font-family: var(--font);
+    font-size: 11px;
+    padding: 6px 20px;
+    letter-spacing: 2px;
+    animation: toast-in 0.2s ease, toast-out 0.4s ease 2.6s forwards;
+  }
+  .toast.warn { border-color: var(--orange); color: var(--orange); }
+  .toast.err  { border-color: var(--red);    color: var(--red); }
+
+  @keyframes toast-in  { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:none; } }
+  @keyframes toast-out { from { opacity:1; } to { opacity:0; } }
+
+  /* ══════════════════════════════════════
+     MODAL (crash, orbit achieved, etc.)
+  ══════════════════════════════════════ */
+  #modal-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 300;
+  }
+
+  #modal-box {
+    background: #06100a;
+    border: 1px solid var(--green);
+    padding: 32px 40px;
+    min-width: 320px;
+    text-align: center;
+  }
+
+  #modal-title {
+    font-size: 16px;
+    color: var(--green);
+    letter-spacing: 4px;
+    margin-bottom: 12px;
+    text-shadow: 0 0 16px var(--green);
+  }
+  #modal-body {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 24px;
+    line-height: 1.9;
+    white-space: pre-line;
+  }
+
+  #modal-btns { display: flex; gap: 12px; justify-content: center; }
+
+  /* ══════════════════════════════════════
+     SCANLINE overlay (aesthetic)
+  ══════════════════════════════════════ */
+  #scanlines {
+    position: fixed; inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    z-index: 9999;
+  }
+</style>
+</head>
+<body>
+
+<!-- Scanline CRT aesthetic -->
+<div id="scanlines"></div>
+
+<!-- ══ MAIN CANVAS (starfield + simulation) ══ -->
+<canvas id="gameCanvas"></canvas>
+
+<!-- ══ TOAST NOTIFICATIONS ══ -->
+<div id="toast-wrap"></div>
+
+<!-- ══ MODAL ══ -->
+<div id="modal-overlay" class="hidden">
+  <div id="modal-box">
+    <div id="modal-title">TITLE</div>
+    <div id="modal-body"></div>
+    <div id="modal-btns"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     TITLE SCREEN
+════════════════════════════════════════════ -->
+<div id="screen-title">
+  <pre id="title-ascii">
+   ██████╗ ██████╗  ██████╗ ██╗  ██╗███████╗██████╗     ███████╗███████╗
+  ██╔════╝██╔═══██╗██╔═══██╗██║ ██╔╝██╔════╝██╔══██╗    ██╔════╝██╔════╝
+  ██║     ██║   ██║██║   ██║█████╔╝ █████╗  ██║  ██║    █████╗  ███████╗
+  ██║     ██║   ██║██║   ██║██╔═██╗ ██╔══╝  ██║  ██║    ██╔══╝  ╚════██║
+  ╚██████╗╚██████╔╝╚██████╔╝██║  ██╗███████╗██████╔╝    ██║     ███████║
+   ╚═════╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═════╝     ╚═╝     ╚══════╝</pre>
+  <div id="title-sub">2d space flight simulator</div>
+  <button class="title-btn" onclick="GameUI.showVAB()">▶ NEW ROCKET</button>
+  <button class="title-btn" onclick="GameUI.showCredits()" style="margin-top:2px">  ABOUT</button>
+  <div id="title-version">v0.1.0 — alpha</div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     VAB — VEHICLE ASSEMBLY BUILDING
+════════════════════════════════════════════ -->
+<div id="screen-vab" class="hidden">
+
+  <!-- Left: parts palette -->
+  <div id="vab-parts">
+    <div id="vab-parts-title">PARTS</div>
+    <div style="overflow-y:auto; flex:1;">
+
+      <div class="parts-category">COMMAND</div>
+      <div class="parts-list" id="parts-command"></div>
+
+      <div class="parts-category">PROPULSION</div>
+      <div class="parts-list" id="parts-engines"></div>
+
+      <div class="parts-category">FUEL</div>
+      <div class="parts-list" id="parts-fuel"></div>
+
+      <div class="parts-category">STRUCTURE</div>
+      <div class="parts-list" id="parts-structure"></div>
+
+      <div class="parts-category">UTILITY</div>
+      <div class="parts-list" id="parts-utility"></div>
+    </div>
+  </div>
+
+  <!-- Center: build canvas -->
+  <div id="vab-canvas-wrap">
+    <div id="vab-topbar">
+      <span id="vab-title-label">VEHICLE:</span>
+      <input id="vab-rocket-name" type="text" value="Unnamed Rocket" maxlength="32" spellcheck="false">
+      <button class="vab-btn" onclick="VAB.clearRocket()">CLEAR</button>
+      <button class="vab-btn" onclick="GameUI.showTitle()">← BACK</button>
+      <button class="vab-btn primary" onclick="GameUI.launchRocket()">LAUNCH ▶</button>
+    </div>
+    <canvas id="vab-canvas"></canvas>
+  </div>
+
+  <!-- Right: info panel -->
+  <div id="vab-info">
+    <div class="info-section">VEHICLE STATS</div>
+    <div class="info-row"><span class="info-label">PARTS</span><span class="info-val" id="info-parts">0</span></div>
+    <div class="info-row"><span class="info-label">MASS</span><span class="info-val" id="info-mass">0 t</span></div>
+    <div class="info-row"><span class="info-label">THRUST</span><span class="info-val" id="info-thrust">0 kN</span></div>
+    <div class="info-row"><span class="info-label">TWR</span><span class="info-val" id="info-twr">0.00</span></div>
+    <div class="info-row"><span class="info-label">Δv</span><span class="info-val" id="info-dv">0 m/s</span></div>
+    <div class="info-row"><span class="info-label">STAGES</span><span class="info-val" id="info-stages">0</span></div>
+
+    <div class="info-section">SELECTED PART</div>
+    <div id="info-part-detail" style="color:var(--muted);font-size:10px;line-height:1.8;">
+      Click a part to inspect.
+    </div>
+
+    <div class="info-section" style="margin-top:20px;">CONTROLS</div>
+    <div style="font-size:10px;color:var(--muted);line-height:2;">
+      CLICK — place part<br>
+      RIGHT CLICK — delete<br>
+      SCROLL — zoom<br>
+      MIDDLE — pan<br>
+      R — rotate part
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     FLIGHT SCREEN HUD
+════════════════════════════════════════════ -->
+<div id="screen-flight" class="hidden">
+
+  <!-- Back button (top-left but ABOVE telem panel after telem is shown) -->
+  <button id="hud-back-btn" onclick="GameUI.confirmAbort()">✕ ABORT</button>
+
+  <!-- Telemetry -->
+  <div id="hud-telem" style="top:10px; left:10px; pointer-events:none;">
+    <div id="hud-telem-title">TELEMETRY</div>
+    <div class="telem-row"><span class="telem-label">ALT</span><span class="telem-val" id="t-alt">0 m</span></div>
+    <div class="telem-row"><span class="telem-label">SPD</span><span class="telem-val" id="t-spd">0 m/s</span></div>
+    <div class="telem-row"><span class="telem-label">VSPD</span><span class="telem-val" id="t-vspd">0 m/s</span></div>
+    <div class="telem-row"><span class="telem-label">MACH</span><span class="telem-val" id="t-mach">0.00</span></div>
+    <div class="telem-row"><span class="telem-label">APOAPSIS</span><span class="telem-val" id="t-apo">—</span></div>
+    <div class="telem-row"><span class="telem-label">PERIAPSIS</span><span class="telem-val" id="t-peri">—</span></div>
+    <div class="telem-row"><span class="telem-label">BODY</span><span class="telem-val" id="t-body">Kerth</span></div>
+    <div class="telem-row"><span class="telem-label">FUEL</span><span class="telem-val" id="t-fuel">100%</span></div>
+    <div class="telem-row"><span class="telem-label">G-FORCE</span><span class="telem-val" id="t-gforce">1.00 g</span></div>
+  </div>
+
+  <!-- Map toggle -->
+  <button id="hud-map-btn" onclick="Flight.toggleMap()">MAP [M]</button>
+
+  <!-- Time warp -->
+  <div id="hud-warp">
+    WARP: <span id="warp-val">1×</span>
+    &nbsp;[,] slower &nbsp;[.] faster
+  </div>
+
+  <!-- Throttle gauge -->
+  <div id="hud-throttle">
+    <div id="throttle-pct">0%</div>
+    <div id="throttle-bar-wrap">
+      <div id="throttle-bar" style="height:0%"></div>
+    </div>
+    <div>THR</div>
+  </div>
+
+  <!-- Navball -->
+  <div id="hud-navball">
+    <canvas id="navball-canvas" width="80" height="80"></canvas>
+    <div id="nav-label" style="font-size:10px;color:var(--muted);">PROGRADE</div>
+  </div>
+
+  <!-- Stage list + button -->
+  <div id="hud-stages">
+    <div id="stage-list"></div>
+    <button id="stage-btn" onclick="Flight.activateStage()">STAGE [SPACE]</button>
+  </div>
+
+  <!-- Control hints -->
+  <div id="hud-controls">
+    <span class="ctrl-key" id="key-w">W ▲</span>
+    <span class="ctrl-sep">THR</span>
+    <span class="ctrl-key" id="key-s">S ▼</span>
+    <span class="ctrl-sep">|</span>
+    <span class="ctrl-key" id="key-a">A ↺</span>
+    <span class="ctrl-sep">ROT</span>
+    <span class="ctrl-key" id="key-d">D ↻</span>
+    <span class="ctrl-sep">|</span>
+    <span class="ctrl-key" id="key-x">X CUT</span>
+  </div>
+
+  <!-- Map legend (only shown in map mode) -->
+  <div id="map-legend" class="hidden">
+    <div style="color:var(--green);">● ROCKET</div>
+    <div style="color:var(--blue);">— ORBIT</div>
+    <div style="color:var(--muted);">SCROLL — zoom</div>
+    <div style="color:var(--muted);">DRAG — pan</div>
+  </div>
+</div>
+
+<!-- ════════════ SCRIPTS ════════════ -->
+<script src="solar.js"></script>
+<script src="physics.js"></script>
+<script src="rocket.js"></script>
+<script src="game.js"></script>
+
+</body>
+</html>
