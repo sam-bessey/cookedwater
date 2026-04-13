@@ -1,0 +1,325 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #0a0a0f;
+    color: #00ff88;
+    font-family: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+    overflow: hidden;
+    user-select: none;
+}
+
+#game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+}
+
+canvas {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+#ui-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+#ui-overlay > * {
+    pointer-events: auto;
+}
+
+.panel {
+    background: rgba(10, 10, 15, 0.9);
+    border: 1px solid #00ff88;
+    padding: 15px;
+    position: absolute;
+}
+
+#hud {
+    top: 10px;
+    left: 10px;
+    min-width: 200px;
+}
+
+#hud-top {
+    top: 10px;
+    right: 10px;
+    text-align: right;
+}
+
+#controls-panel {
+    bottom: 10px;
+    left: 10px;
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.hud-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 5px 0;
+}
+
+.hud-label {
+    color: #00aa66;
+}
+
+.hud-value {
+    color: #00ff88;
+    min-width: 100px;
+    text-align: right;
+}
+
+.hud-value.warning {
+    color: #ffaa00;
+}
+
+.hud-value.danger {
+    color: #ff4444;
+}
+
+#menu-screen, #vab-screen, #pause-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 10, 15, 0.95);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.hidden {
+    display: none !important;
+}
+
+#menu-screen h1 {
+    font-size: 48px;
+    margin-bottom: 10px;
+    letter-spacing: 5px;
+    text-shadow: 0 0 20px #00ff88;
+}
+
+#menu-screen h2 {
+    font-size: 18px;
+    color: #00aa66;
+    margin-bottom: 40px;
+}
+
+.menu-btn {
+    background: transparent;
+    border: 2px solid #00ff88;
+    color: #00ff88;
+    padding: 15px 40px;
+    font-family: inherit;
+    font-size: 16px;
+    cursor: pointer;
+    margin: 10px;
+    transition: all 0.2s;
+    min-width: 250px;
+}
+
+.menu-btn:hover {
+    background: #00ff88;
+    color: #0a0a0f;
+}
+
+#vab-screen {
+    display: none;
+    flex-direction: row;
+}
+
+#parts-panel {
+    width: 250px;
+    height: 100%;
+    background: rgba(10, 10, 15, 0.95);
+    border-right: 1px solid #00ff88;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+#rocket-preview {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#rocket-canvas {
+    background: transparent;
+}
+
+#stats-panel {
+    width: 300px;
+    height: 100%;
+    background: rgba(10, 10, 15, 0.95);
+    border-left: 1px solid #00ff88;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.part-item {
+    border: 1px solid #00aa66;
+    padding: 10px;
+    margin: 10px 0;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.part-item:hover, .part-item.selected {
+    border-color: #00ff88;
+    background: rgba(0, 255, 136, 0.1);
+}
+
+.part-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.part-stats {
+    font-size: 12px;
+    color: #00aa66;
+}
+
+.part-slot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed #00aa66;
+    height: 60px;
+    margin: 5px 0;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.part-slot:hover {
+    border-color: #00ff88;
+}
+
+.part-slot.filled {
+    border-style: solid;
+    border-color: #00ff88;
+    background: rgba(0, 255, 136, 0.1);
+}
+
+#stage-list {
+    margin-top: 20px;
+}
+
+.stage-item {
+    background: rgba(0, 255, 136, 0.05);
+    border: 1px solid #00aa66;
+    padding: 10px;
+    margin: 5px 0;
+}
+
+.orbit-info {
+    font-size: 12px;
+    line-height: 1.8;
+}
+
+.orbit-info .label {
+    color: #00aa66;
+    display: inline-block;
+    width: 80px;
+}
+
+.orbit-info .value {
+    color: #00ff88;
+}
+
+#time-warp {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 48px;
+    color: #00ff88;
+    opacity: 0;
+    transition: opacity 0.3s;
+    text-shadow: 0 0 20px #00ff88;
+}
+
+#time-warp.visible {
+    opacity: 0.8;
+}
+
+#message {
+    position: absolute;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 24px;
+    color: #00ff88;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.5s;
+    text-shadow: 0 0 10px #00ff88;
+}
+
+#message.visible {
+    opacity: 1;
+}
+
+.status-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+.status-indicator.orbiting {
+    background: #00ff88;
+    box-shadow: 0 0 5px #00ff88;
+}
+
+.status-indicator.landed {
+    background: #ffaa00;
+    box-shadow: 0 0 5px #ffaa00;
+}
+
+.status-indicator.crashed {
+    background: #ff4444;
+    box-shadow: 0 0 5px #ff4444;
+}
+
+.mission-objectives {
+    font-size: 14px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #00aa66;
+}
+
+.objective {
+    margin: 10px 0;
+    padding: 5px;
+}
+
+.objective.complete {
+    color: #00ff88;
+    text-decoration: line-through;
+}
+
+.objective.incomplete {
+    color: #00aa66;
+}
+
+.color-red { color: #ff4444; }
+.color-orange { color: #ffaa00; }
+.color-green { color: #00ff88; }
+.color-cyan { color: #00ffff; }
