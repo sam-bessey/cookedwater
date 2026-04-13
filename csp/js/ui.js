@@ -662,7 +662,11 @@ const UI = {
                     this.updateBuilderHelp('Part placed! Select another part or launch');
                     this.drawRocketBuilder();
                     this.updateVABStats();
+                } else {
+                    this.updateBuilderHelp('Cannot place this part here');
                 }
+            } else {
+                this.updateBuilderHelp('Cannot place here - too close to another part');
             }
         }
     },
@@ -702,6 +706,14 @@ const UI = {
                     this.builderCtx.arc(snapInfo.point.x, snapInfo.point.y, 10, 0, Math.PI * 2);
                     this.builderCtx.stroke();
                     this.builderCtx.setLineDash([]);
+                } else {
+                    this.builderCtx.strokeStyle = '#ff4444';
+                    this.builderCtx.lineWidth = 2;
+                    this.builderCtx.setLineDash([5, 5]);
+                    this.builderCtx.beginPath();
+                    this.builderCtx.arc(this.mousePos.x, this.mousePos.y, 15, 0, Math.PI * 2);
+                    this.builderCtx.stroke();
+                    this.builderCtx.setLineDash([]);
                 }
             }
         }
@@ -710,7 +722,13 @@ const UI = {
     findNearestSnapPoint(x, y) {
         if (this.rocketParts.length === 0) {
             const centerX = this.builderCanvas.width / 2;
-            return { stage: 0, point: { x: centerX, y: this.builderCanvas.height - 60 } };
+            const centerY = this.builderCanvas.height / 2;
+            
+            if (this.selectedPart && this.wouldOverlap(centerX, centerY, this.selectedPart)) {
+                return null;
+            }
+            
+            return { stage: 0, point: { x: centerX, y: centerY } };
         }
         
         let nearest = null;
@@ -720,12 +738,7 @@ const UI = {
             const stage = this.rocketParts[si];
             for (let pi = 0; pi < stage.length; pi++) {
                 const part = stage[pi];
-                
-                this.builderCtx.save();
-                this.builderCtx.translate(part.x, part.y);
                 const dims = PartRenderer.getPartDimensions(part);
-                this.builderCtx.restore();
-                
                 const bottomPoint = { x: part.x, y: part.y + dims.height / 2 };
                 const dist = Math.sqrt((x - bottomPoint.x) ** 2 + (y - bottomPoint.y) ** 2);
                 if (dist < minDist) {
@@ -733,6 +746,10 @@ const UI = {
                     nearest = { stage: si, point: bottomPoint };
                 }
             }
+        }
+        
+        if (nearest && this.selectedPart && this.wouldOverlap(nearest.point.x, nearest.point.y, this.selectedPart)) {
+            return null;
         }
         
         if (nearest) return nearest;
@@ -744,11 +761,33 @@ const UI = {
             const topPoint = { x: lastPart.x, y: lastPart.y - dims.height / 2 };
             const dist = Math.sqrt((x - topPoint.x) ** 2 + (y - topPoint.y) ** 2);
             if (dist < 50) {
+                if (this.selectedPart && this.wouldOverlap(topPoint.x, topPoint.y, this.selectedPart)) {
+                    return null;
+                }
                 return { stage: this.rocketParts.length - 1, point: topPoint };
             }
         }
         
         return null;
+    },
+    
+    wouldOverlap(x, y, partId) {
+        const partDef = RocketParts[partId];
+        if (!partDef) return false;
+        
+        const dims = PartRenderer.getPartDimensions(partDef);
+        
+        for (const stage of this.rocketParts) {
+            for (const existing of stage) {
+                const existingDims = PartRenderer.getPartDimensions(existing);
+                const dist = Math.sqrt((x - existing.x) ** 2 + (y - existing.y) ** 2);
+                const minDist = (dims.width + existingDims.width) / 3;
+                if (dist < minDist) {
+                    return true;
+                }
+            }
+        }
+        return false;
     },
     
     findPartAtPosition(x, y) {

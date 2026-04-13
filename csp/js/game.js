@@ -69,23 +69,31 @@ const Game = {
         
         const earth = Planets.getBody('earth');
         if (earth) {
-            Rocket.launch(earth.x, earth.y, earth);
+            Rocket.launch(earth.x, earth.y + earth.radius + 10, earth);
         }
         
         this.camera.x = Rocket.x;
         this.camera.y = Rocket.y;
-        this.camera.zoom = 0.00001;
-        this.camera.targetZoom = 0.00001;
+        this.camera.zoom = 20;
+        this.camera.targetZoom = 20;
+        this.camera.minZoom = 0.1;
+        this.camera.maxZoom = 100;
         
         this.visitedBodies = ['earth'];
         this.missionComplete = false;
         this.timeScale = 1;
         
+        Rocket.throttle = 1;
+        
         UI.showGame();
-        UI.showMessage('LAUNCH SUCCESSFUL!', 3000);
+        UI.showMessage('LIFTOFF!', 3000);
         
         this.state = 'flight';
     },
+    
+    launchCountdown: 0,
+    launchPhase: 'idle',
+    countdownTimer: null,
     
     launch() {
         if (Rocket.stages.length === 0 || !Rocket.hasPart('commandModule')) {
@@ -93,19 +101,43 @@ const Game = {
             return;
         }
         
+        // Start 3-2-1 countdown
+        this.launchCountdown = 3;
+        this.launchPhase = 'countdown';
+        
+        UI.showMessage('LAUNCH IN 3...', 1000);
+        
+        this.countdownTimer = setInterval(() => {
+            this.launchCountdown--;
+            if (this.launchCountdown > 0) {
+                UI.showMessage(`LAUNCH IN ${this.launchCountdown}...`, 1000);
+            } else {
+                clearInterval(this.countdownTimer);
+                this.executeLiftoff();
+            }
+        }, 1000);
+    },
+    
+    executeLiftoff() {
         const earth = Planets.getBody('earth');
         if (earth) {
-            Rocket.launch(earth.x, earth.y, earth);
+            // Start on surface
+            Rocket.launch(earth.x, earth.y + earth.radius + 10, earth);
         }
         
+        // Camera: zoom=20 shows rocket at ~50% screen height with ground line visible
         this.camera.x = Rocket.x;
         this.camera.y = Rocket.y;
-        this.camera.zoom = 0.00001;
-        this.camera.targetZoom = 0.00001;
+        this.camera.zoom = 20;
+        this.camera.targetZoom = 20;
+        this.camera.minZoom = 0.1;
+        this.camera.maxZoom = 100;
+        
+        Rocket.throttle = 1;  // Full throttle
+        this.launchPhase = 'flight';
         
         UI.showGame();
-        UI.showMessage('LAUNCH SUCCESSFUL!', 3000);
-        
+        UI.showMessage('LIFTOFF!', 3000);
         this.state = 'flight';
     },
     
@@ -345,20 +377,27 @@ const Game = {
             this.ctx.fill();
         }
         
-        const earthRadius = Math.min(300, this.width * 0.3);
-        const earthGradient = this.ctx.createRadialGradient(
-            this.width / 2, horizon + earthRadius * 0.8, 0,
-            this.width / 2, horizon + earthRadius * 0.8, earthRadius
-        );
-        earthGradient.addColorStop(0, '#4488ff');
-        earthGradient.addColorStop(0.3, '#3366cc');
-        earthGradient.addColorStop(0.7, '#224488');
-        earthGradient.addColorStop(1, '#112244');
+        let earthRadius = Math.min(300, this.width * 0.3);
         
-        this.ctx.fillStyle = earthGradient;
-        this.ctx.beginPath();
-        this.ctx.arc(this.width / 2, horizon + earthRadius * 0.9, earthRadius, 0, Math.PI * 2);
-        this.ctx.fill();
+        if (!isFinite(earthRadius) || earthRadius <= 0) {
+            earthRadius = 100;
+        }
+        
+        if (isFinite(horizon) && isFinite(earthRadius)) {
+            const earthGradient = this.ctx.createRadialGradient(
+                this.width / 2, horizon + earthRadius * 0.8, 0,
+                this.width / 2, horizon + earthRadius * 0.8, earthRadius
+            );
+            earthGradient.addColorStop(0, '#4488ff');
+            earthGradient.addColorStop(0.3, '#3366cc');
+            earthGradient.addColorStop(0.7, '#224488');
+            earthGradient.addColorStop(1, '#112244');
+            
+            this.ctx.fillStyle = earthGradient;
+            this.ctx.beginPath();
+            this.ctx.arc(this.width / 2, horizon + earthRadius * 0.9, earthRadius, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
         
         if (earth.atmosphere) {
             const atmosphereHeight = earth.atmosphere.height / 100000 * 50;
@@ -436,29 +475,35 @@ const Game = {
         const bodyScreenY = horizon + 200;
         const bodyRadius = Math.max(10, body.radius * scale);
         
-        const bodyGradient = this.ctx.createRadialGradient(
-            bodyScreenX, bodyScreenY - bodyRadius * 0.3, 0,
-            bodyScreenX, bodyScreenY, bodyRadius
-        );
-        bodyGradient.addColorStop(0, body.color);
-        bodyGradient.addColorStop(1, this.darkenColor(body.color, 0.5));
-        
-        this.ctx.fillStyle = bodyGradient;
-        this.ctx.beginPath();
-        this.ctx.arc(bodyScreenX, bodyScreenY, bodyRadius, 0, Math.PI * 2);
-        this.ctx.fill();
-        
-        if (body.atmosphere && this.camera.zoom < 0.001) {
-            const atmGradient = this.ctx.createRadialGradient(
-                bodyScreenX, bodyScreenY, bodyRadius,
-                bodyScreenX, bodyScreenY, bodyRadius + (body.atmosphere.height || 100000) * scale * 0.001
+        if (isFinite(bodyScreenX) && isFinite(bodyScreenY) && isFinite(bodyRadius) && bodyRadius > 0) {
+            const bodyGradient = this.ctx.createRadialGradient(
+                bodyScreenX, bodyScreenY - bodyRadius * 0.3, 0,
+                bodyScreenX, bodyScreenY, bodyRadius
             );
-            atmGradient.addColorStop(0, body.atmosphere.color || 'rgba(100, 150, 255, 0.4)');
-            atmGradient.addColorStop(1, 'rgba(0,0,0,0)');
-            this.ctx.fillStyle = atmGradient;
+            bodyGradient.addColorStop(0, body.color);
+            bodyGradient.addColorStop(1, this.darkenColor(body.color, 0.5));
+            
+            this.ctx.fillStyle = bodyGradient;
             this.ctx.beginPath();
-            this.ctx.arc(bodyScreenX, bodyScreenY, bodyRadius + (body.atmosphere.height || 100000) * scale * 0.001, 0, Math.PI * 2);
+            this.ctx.arc(bodyScreenX, bodyScreenY, bodyRadius, 0, Math.PI * 2);
             this.ctx.fill();
+        }
+        
+        if (body.atmosphere && this.camera.zoom < 0.001 && isFinite(bodyScreenX) && isFinite(bodyScreenY) && isFinite(bodyRadius)) {
+            const atmHeight = body.atmosphere.height || 100000;
+            const atmRadius = bodyRadius + atmHeight * scale * 0.001;
+            if (isFinite(atmRadius) && atmRadius > 0) {
+                const atmGradient = this.ctx.createRadialGradient(
+                    bodyScreenX, bodyScreenY, bodyRadius,
+                    bodyScreenX, bodyScreenY, atmRadius
+                );
+                atmGradient.addColorStop(0, body.atmosphere.color || 'rgba(100, 150, 255, 0.4)');
+                atmGradient.addColorStop(1, 'rgba(0,0,0,0)');
+                this.ctx.fillStyle = atmGradient;
+                this.ctx.beginPath();
+                this.ctx.arc(bodyScreenX, bodyScreenY, atmRadius, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
         }
         
         if (this.showTrajectory && this.trajectoryPoints.length > 0) {
@@ -525,17 +570,21 @@ const Game = {
             if (screenX < -100 || screenX > this.width + 100 || 
                 screenY < -100 || screenY > this.height + 100) continue;
             
-            const bodyRadius = Math.max(3, body.radius * this.camera.zoom * 0.001);
+            const safeZoom = Math.max(0.00001, Math.min(100, this.camera.zoom));
+            const bodyRadius = Math.max(3, body.radius * safeZoom * 0.001);
             
-            if (body.id === 'sun') {
-                const glow = this.ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, bodyRadius * 3);
+            if (body.id === 'sun' && isFinite(screenX) && isFinite(screenY) && isFinite(bodyRadius)) {
+                const glowRadius = Math.max(1, bodyRadius * 3);
+                const glow = this.ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, glowRadius);
                 glow.addColorStop(0, 'rgba(255, 255, 100, 0.5)');
                 glow.addColorStop(1, 'rgba(255, 200, 50, 0)');
                 this.ctx.fillStyle = glow;
                 this.ctx.beginPath();
-                this.ctx.arc(screenX, screenY, bodyRadius * 3, 0, Math.PI * 2);
+                this.ctx.arc(screenX, screenY, glowRadius, 0, Math.PI * 2);
                 this.ctx.fill();
             }
+            
+            if (!isFinite(bodyRadius)) continue;
             
             this.ctx.fillStyle = body.color;
             this.ctx.beginPath();
